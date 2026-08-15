@@ -57,9 +57,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tag="v1000.0.0"
-          title="EmeraldCommandCenter — 1,000,000,000 lines"
-          notes="В релизе две версии. EmeraldCommandCenter.compact.plugin.js — рабочий русский BetterDiscord-плагин. EmeraldCommandCenter.plugin.js — точная миллиардная коллекционная версия размером около 1 ГБ; она содержит ровно 1 000 000 000 строк, но превышает лимит строки движка V8 и поэтому не может загружаться BetterDiscord как исполняемый JavaScript."
+          tag="v1001.0.0"
+          title="EmeraldCommandCenter All-in-One RU — 1,000,000,000 lines"
+          notes="Мощное русское all-in-one обновление: центр быстрых команд, шесть готовых режимов, три личных профиля, локальный поиск по открытому чату, фильтры, копирование кода, счётчик символов, Pomodoro, локальная заметка, FPS/сеть, расширенная приватность и настройка компоновки. EmeraldCommandCenter.compact.plugin.js — рабочая версия. EmeraldCommandCenter.plugin.js — точная миллиардная коллекционная версия размером около 1 ГБ; она содержит ровно 1 000 000 000 строк, но превышает лимит строки движка V8 и поэтому не загружается BetterDiscord как исполняемый JavaScript."
 
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" --title "$title" --notes "$notes"
