@@ -1,0 +1,73 @@
+name: Build billion-line Discord plugin
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/build-release.yml
+      - scripts/build-billion-plugin.mjs
+      - src/EmeraldCommandCenter.core.js
+
+permissions:
+  contents: write
+
+concurrency:
+  group: emerald-command-center-billion-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    name: Build, verify and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build exactly one billion lines
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build-billion-plugin.mjs
+          cp src/EmeraldCommandCenter.core.js dist/EmeraldCommandCenter.compact.plugin.js
+
+      - name: Verify functional core and exact line count
+        shell: bash
+        run: |
+          set -euo pipefail
+          huge_file="dist/EmeraldCommandCenter.plugin.js"
+          compact_file="dist/EmeraldCommandCenter.compact.plugin.js"
+          actual_lines="$(wc -l < "$huge_file")"
+          test "$actual_lines" -eq 1000000000
+          test "$(tail -n 1 "$huge_file")" = "END EXACT-LINE-COUNT PADDING */"
+          core_bytes="$(wc -c < src/EmeraldCommandCenter.core.js)"
+          cmp -n "$core_bytes" src/EmeraldCommandCenter.core.js "$huge_file"
+          node --check "$compact_file"
+          sha256sum "$huge_file" | tee "${huge_file}.sha256"
+          sha256sum "$compact_file" | tee "${compact_file}.sha256"
+          bytes="$(wc -c < "$huge_file")"
+          printf 'Verified: %s lines, %s bytes\n' "$actual_lines" "$bytes"
+
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v1000.0.0"
+          title="EmeraldCommandCenter — 1,000,000,000 lines"
+          notes="В релизе две версии. EmeraldCommandCenter.compact.plugin.js — рабочий русский BetterDiscord-плагин. EmeraldCommandCenter.plugin.js — точная миллиардная коллекционная версия размером около 1 ГБ; она содержит ровно 1 000 000 000 строк, но превышает лимит строки движка V8 и поэтому не может загружаться BetterDiscord как исполняемый JavaScript."
+
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --title "$title" --notes "$notes"
+          fi
+
+          gh release upload "$tag" \
+            "dist/EmeraldCommandCenter.plugin.js" \
+            "dist/EmeraldCommandCenter.plugin.js.sha256" \
+            "dist/EmeraldCommandCenter.compact.plugin.js" \
+            "dist/EmeraldCommandCenter.compact.plugin.js.sha256" \
+            --clobber
