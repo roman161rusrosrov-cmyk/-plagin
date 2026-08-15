@@ -1,0 +1,73 @@
+name: Проверка и релиз PowerDiscord
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - src/PowerDiscord.plugin.js
+      - scripts/validate-powerdiscord.mjs
+      - docs/POWERDISCORD_FEATURES_RU.md
+      - docs/powerdiscord-validation.json
+      - .github/workflows/powerdiscord-release.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: powerdiscord-release
+  cancel-in-progress: true
+
+jobs:
+  validate-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Получить репозиторий
+        uses: actions/checkout@v4
+
+      - name: Подготовить Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Проверить синтаксис
+        run: |
+          node --check src/PowerDiscord.plugin.js
+          node --check scripts/validate-powerdiscord.mjs
+
+      - name: Проверить 530 функций и безопасность
+        run: node scripts/validate-powerdiscord.mjs
+
+      - name: Собрать устанавливаемый файл
+        run: |
+          mkdir -p dist
+          cp src/PowerDiscord.plugin.js dist/PowerDiscord.plugin.js
+          sha256sum dist/PowerDiscord.plugin.js > dist/PowerDiscord.plugin.js.sha256
+
+      - name: Сохранить артефакт проверки
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerDiscord-1.0.0
+          path: |
+            dist/PowerDiscord.plugin.js
+            dist/PowerDiscord.plugin.js.sha256
+            docs/POWERDISCORD_FEATURES_RU.md
+            docs/powerdiscord-validation.json
+
+      - name: Опубликовать релиз
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: powerdiscord-v1.0.0
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              dist/PowerDiscord.plugin.js \
+              dist/PowerDiscord.plugin.js.sha256 \
+              --clobber
+          else
+            gh release create "$TAG" \
+              dist/PowerDiscord.plugin.js \
+              dist/PowerDiscord.plugin.js.sha256 \
+              --title "PowerDiscord 1.0.0 — 530 функций" \
+              --notes "Русскоязычный BetterDiscord all-in-one: 530 локальных функций, 20 тем, 20 пресетов, 60 текстовых инструментов, 60 действий с сообщениями и медиа, адаптивность, профили и диагностика. Без токенов, телеметрии, сетевых запросов и Nitro-bypass."

@@ -1,0 +1,26 @@
+{
+  "plugin": "PowerDiscord",
+  "version": "1.0.0",
+  "generatedAt": "2026-08-15T20:29:22.977Z",
+  "source": "PowerDiscord.plugin.js",
+  "sourceBytes": 173550,
+  "featureCount": 530,
+  "categoryCount": 18,
+  "handlerCounts": {
+    "toggle": 250,
+    "range": 30,
+    "theme": 20,
+    "preset": 20,
+    "text": 60,
+    "context-action": 60,
+    "utility": 50,
+    "system": 30,
+    "behavior": 10
+  },
+  "uniqueIds": 530,
+  "uniqueKeys": 530,
+  "uniqueNames": 530,
+  "textTransformsExecuted": 60,
+  "forbiddenPatternChecks": 9,
+  "status": "ok"
+}
