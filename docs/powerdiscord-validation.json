@@ -1,26 +1,22 @@
 {
   "plugin": "PowerDiscord",
-  "version": "1.0.0",
-  "generatedAt": "2026-08-15T20:29:22.977Z",
-  "source": "PowerDiscord.plugin.js",
-  "sourceBytes": 173550,
-  "featureCount": 530,
-  "categoryCount": 18,
-  "handlerCounts": {
-    "toggle": 250,
-    "range": 30,
-    "theme": 20,
-    "preset": 20,
-    "text": 60,
-    "context-action": 60,
-    "utility": 50,
-    "system": 30,
-    "behavior": 10
+  "version": "2.0.0",
+  "generatedAt": "2026-08-15T22:55:11.346Z",
+  "sourceBytes": 71048,
+  "featureCount": 100,
+  "categoryCount": 11,
+  "typeCounts": {
+    "toggle": 40,
+    "range": 10,
+    "theme": 10,
+    "text": 15,
+    "action": 20,
+    "behavior": 5
   },
-  "uniqueIds": 530,
-  "uniqueKeys": 530,
-  "uniqueNames": 530,
-  "textTransformsExecuted": 60,
+  "uniqueIds": 100,
+  "uniqueKeys": 100,
+  "bilingualNames": true,
+  "textTransformsExecuted": 15,
   "forbiddenPatternChecks": 9,
   "status": "ok"
 }

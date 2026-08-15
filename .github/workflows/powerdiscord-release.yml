@@ -35,7 +35,7 @@ jobs:
           node --check src/PowerDiscord.plugin.js
           node --check scripts/validate-powerdiscord.mjs
 
-      - name: Проверить 530 функций и безопасность
+      - name: Проверить 100 функций и безопасность
         run: node scripts/validate-powerdiscord.mjs
 
       - name: Собрать устанавливаемый файл
@@ -47,7 +47,7 @@ jobs:
       - name: Сохранить артефакт проверки
         uses: actions/upload-artifact@v4
         with:
-          name: PowerDiscord-1.0.0
+          name: PowerDiscord-2.0.0
           path: |
             dist/PowerDiscord.plugin.js
             dist/PowerDiscord.plugin.js.sha256
@@ -58,7 +58,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: powerdiscord-v1.0.0
+          TAG: powerdiscord-v2.0.0
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" \
@@ -69,6 +69,6 @@ jobs:
             gh release create "$TAG" \
               dist/PowerDiscord.plugin.js \
               dist/PowerDiscord.plugin.js.sha256 \
-              --title "PowerDiscord 1.0.0 — 530 функций" \
-              --notes "Русскоязычный BetterDiscord all-in-one: 530 локальных функций, 20 тем, 20 пресетов, 60 текстовых инструментов, 60 действий с сообщениями и медиа, адаптивность, профили и диагностика. Без токенов, телеметрии, сетевых запросов и Nitro-bypass."
+              --title "PowerDiscord 2.0.0 — Purple Edition, 100 функций" \
+              --notes "Полностью переработанная фиолетовая версия: ровно 100 безопасных локальных функций, 10 тем, 15 текстовых инструментов, 20 действий с уже видимыми сообщениями, каналами и медиа, адаптивность и диагностика. Без токенов, телеметрии, сетевых запросов, журналирования сообщений и обхода прав Discord."
           fi

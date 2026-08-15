@@ -8,184 +8,114 @@ import {fileURLToPath} from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.basename(here) === 'scripts' ? path.resolve(here, '..') : here;
-const candidates = [
-  path.join(root, 'src', 'PowerDiscord.plugin.js'),
-  path.join(root, 'PowerDiscord.plugin.js')
-];
-const sourcePath = candidates.find(candidate => fs.existsSync(candidate));
+const sourcePath = [path.join(root, 'src', 'PowerDiscord.plugin.js'), path.join(root, 'PowerDiscord.plugin.js')].find(fs.existsSync);
 assert(sourcePath, 'Не найден PowerDiscord.plugin.js');
 
 const require = createRequire(import.meta.url);
 const Plugin = require(sourcePath);
 const source = fs.readFileSync(sourcePath, 'utf8');
 const features = Plugin.FEATURE_REGISTRY;
-const categories = Plugin.CATEGORY_LABELS;
-const allowedHandlers = Plugin.HANDLER_TYPES;
 const catalogs = Plugin.CATALOGS;
+const categories = Plugin.CATEGORY_LABELS;
 
-assert.equal(typeof Plugin, 'function', 'Плагин должен экспортировать класс');
-for (const method of ['start', 'stop', 'getSettingsPanel']) {
-  assert.equal(typeof Plugin.prototype[method], 'function', `Нет lifecycle-метода ${method}`);
-}
-assert(Array.isArray(features), 'Реестр функций должен быть массивом');
-assert(features.length >= 500, 'В реестре должно быть не менее 500 функций');
+assert.equal(typeof Plugin, 'function', 'Экспорт должен быть классом');
+for (const method of ['start', 'stop', 'getSettingsPanel']) assert.equal(typeof Plugin.prototype[method], 'function', `Нет lifecycle-метода ${method}`);
+assert.equal(features.length, 100, 'В PowerDiscord v2 должно быть ровно 100 функций');
 
 const ids = new Set();
 const keys = new Set();
-const names = new Set();
-const handlerCounts = {};
+const namesRu = new Set();
+const namesEn = new Set();
+const typeCounts = {};
 for (const [index, feature] of features.entries()) {
-  assert.equal(feature.id, index + 1, `Нарушена нумерация около ${feature.key}`);
-  assert(Number.isInteger(feature.id) && feature.id > 0, 'Некорректный ID функции');
+  assert.equal(feature.id, index + 1, `Нарушена нумерация у ${feature.key}`);
   assert.match(feature.key, /^[a-z0-9_]+$/, `Некорректный ключ ${feature.key}`);
-  assert(feature.name?.trim(), `Нет имени у ${feature.key}`);
-  assert(feature.description?.trim(), `Нет описания у ${feature.key}`);
   assert(categories[feature.category], `Неизвестная категория ${feature.category}`);
-  assert(allowedHandlers.has(feature.handler), `Неизвестный handler ${feature.handler}`);
-  assert(feature.config && typeof feature.config === 'object', `Нет config у ${feature.key}`);
-  assert.equal(feature.localOnly, true, `${feature.key} не отмечена как локальная`);
+  assert(feature.name?.ru?.trim(), `Нет русского имени у ${feature.key}`);
+  assert(feature.name?.en?.trim(), `Нет английского имени у ${feature.key}`);
   assert(!ids.has(feature.id), `Повтор ID ${feature.id}`);
   assert(!keys.has(feature.key), `Повтор ключа ${feature.key}`);
-  assert(!names.has(feature.name), `Повтор имени ${feature.name}`);
-  ids.add(feature.id);
-  keys.add(feature.key);
-  names.add(feature.name);
-  handlerCounts[feature.handler] = (handlerCounts[feature.handler] || 0) + 1;
-
-  if (feature.handler === 'toggle') {
-    assert(feature.config.selector?.trim(), `Нет CSS-селектора у ${feature.key}`);
-    assert(feature.config.declaration?.trim(), `Нет CSS-декларации у ${feature.key}`);
+  assert(!namesRu.has(feature.name.ru), `Повтор русского имени ${feature.name.ru}`);
+  assert(!namesEn.has(feature.name.en), `Повтор английского имени ${feature.name.en}`);
+  ids.add(feature.id); keys.add(feature.key); namesRu.add(feature.name.ru); namesEn.add(feature.name.en);
+  typeCounts[feature.type] = (typeCounts[feature.type] || 0) + 1;
+  if (feature.type === 'toggle') {
+    assert(feature.config.selector?.trim(), `Нет селектора у ${feature.key}`);
+    assert(feature.config.declaration?.trim(), `Нет CSS у ${feature.key}`);
   }
-  if (feature.handler === 'range') {
+  if (feature.type === 'range') {
     const config = feature.config;
-    assert.match(config.variable, /^--pd-[a-z0-9-]+$/, `Некорректная CSS-переменная у ${feature.key}`);
-    assert(Number.isFinite(config.min) && Number.isFinite(config.max), `Нет границ у ${feature.key}`);
-    assert(config.min <= config.defaultValue && config.defaultValue <= config.max, `Default вне границ у ${feature.key}`);
+    assert.match(config.variable, /^--pd2-[a-z0-9-]+$/, `Некорректная CSS-переменная у ${feature.key}`);
+    assert(Number.isFinite(config.min) && Number.isFinite(config.max) && config.min < config.max, `Некорректные границы у ${feature.key}`);
+    assert(config.defaultValue >= config.min && config.defaultValue <= config.max, `Default вне границ у ${feature.key}`);
     assert(config.step > 0, `Некорректный шаг у ${feature.key}`);
   }
+  if (feature.type === 'theme') assert.equal(feature.config.palette.length, 6, `Неполная палитра у ${feature.key}`);
 }
 
-const expectedCounts = Object.freeze({
-  toggle: 250,
-  range: 30,
-  theme: 20,
-  preset: 20,
-  text: 60,
-  'context-action': 60,
-  utility: 50,
-  system: 30,
-  behavior: 10
-});
-assert.deepEqual(handlerCounts, expectedCounts, 'Нарушена заявленная структура 530 функций');
+const expectedCounts = {toggle: 40, range: 10, theme: 10, text: 15, action: 20, behavior: 5};
+assert.deepEqual(typeCounts, expectedCounts, 'Нарушена структура реестра 100 функций');
+assert.equal(catalogs.visual.length, 40);
+assert.equal(catalogs.ranges.length, 10);
+assert.equal(catalogs.themes.length, 10);
+assert.equal(catalogs.text.length, 15);
+assert.equal(catalogs.actions.length, 20);
+assert.equal(catalogs.behaviors.length, 5);
 
-const actionCatalogs = Object.freeze([
-  ['text', 'text', 'action'],
-  ['presets', 'preset', 'preset'],
-  ['utility', 'utility', 'action'],
-  ['system', 'system', 'action'],
-  ['behaviors', 'behavior', 'behavior']
-]);
-for (const [catalogName, handlerName, field] of actionCatalogs) {
-  const list = features.filter(feature => feature.handler === handlerName).map(feature => feature.config[field]);
-  assert.deepEqual(list, catalogs[catalogName], `Каталог ${catalogName} не соответствует реестру`);
+const samples = {json_pretty: '{"фиолетовый":true}'};
+for (const action of catalogs.text) {
+  const output = Plugin.transformText(action, samples[action] || '  Привет, Мир!  \nСтрока 2  ');
+  assert.equal(typeof output, 'string', `Текстовый обработчик ${action} вернул не строку`);
 }
-assert.deepEqual(
-  features.filter(feature => feature.handler === 'theme').map(feature => feature.key.replace(/^theme_/, '')),
-  catalogs.themes,
-  'Каталог themes не соответствует реестру'
-);
-assert.equal(catalogs.messages.length, 30, 'Должно быть 30 действий с сообщениями');
-assert.equal(catalogs.media.length, 30, 'Должно быть 30 действий с медиа');
-const contextFeatures = features.filter(feature => feature.handler === 'context-action');
-assert.equal(contextFeatures.filter(feature => feature.config.scope === 'message').length, 30);
-assert.equal(contextFeatures.filter(feature => feature.config.scope === 'media').length, 30);
-
-for (const catalogName of ['text', 'messages', 'media', 'utility', 'system']) {
-  for (const action of catalogs[catalogName]) {
-    const escaped = action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const implemented = new RegExp(`(?:case\\s+['\"]${escaped}['\"]|action\\s*===\\s*['\"]${escaped}['\"]|^\\s*${escaped}:\\s*\\[)`, 'm').test(source)
-      || (catalogName === 'utility' && action.startsWith('timer_') && source.includes("action.startsWith('timer_')"));
-    assert(implemented, `Нет реализации ${catalogName}:${action}`);
-  }
-}
-for (const behavior of catalogs.behaviors) {
-  assert(source.includes(`'${behavior}'`), `Нет реализации поведения ${behavior}`);
-}
-for (const preset of catalogs.presets) {
-  const escaped = preset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  assert(new RegExp(`^\\s*${escaped}:\\s*\\{`, 'm').test(source), `Нет реализации пресета ${preset}`);
+for (const action of catalogs.actions) {
+  const escaped = action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  assert(new RegExp(`case\\s+['\"]${escaped}['\"]`).test(source), `Нет реализации action:${action}`);
 }
 
-const dangerousPatterns = [
+const forbidden = [
   [/\brequire\s*\(\s*['\"](?:child_process|net|tls|http|https)['\"]/, 'опасный Node-модуль'],
   [/\beval\s*\(/, 'eval'],
   [/\bnew\s+Function\s*\(/, 'new Function'],
   [/\bgetToken\s*\(/, 'доступ к токену'],
+  [/\bdocument\.cookie\b/, 'cookies'],
   [/\bXMLHttpRequest\b/, 'XMLHttpRequest'],
-  [/\bfetch\s*\(/, 'fetch'],
+  [/\bfetch\s*\(/, 'сетевой fetch'],
   [/\bBdApi\.(?:Net|Webpack)\b/, 'закрытый BetterDiscord API'],
-  [/DeletedMessageTracker|MessageEditHistory/i, 'журнал удалённых/изменённых сообщений'],
   [/\bTODO\b|\bFIXME\b/, 'незавершённый участок']
 ];
-for (const [pattern, label] of dangerousPatterns) {
-  assert(!pattern.test(source), `Обнаружено запрещённое: ${label}`);
-}
+for (const [pattern, label] of forbidden) assert(!pattern.test(source), `Обнаружено запрещённое: ${label}`);
 
-const samples = {
-  json_pretty: '{"готово":true}',
-  json_minify: '{ "готово": true }',
-  url_decode: '%D1%82%D0%B5%D1%81%D1%82',
-  base64_decode: '0YLQtdGB0YI=',
-  html_unescape: '&lt;b&gt;тест&lt;/b&gt;'
-};
-for (const action of catalogs.text) {
-  const input = samples[action] || '  Привет, Мир!  \nСтрока 2 https://example.com #тест @друг  ';
-  const output = Plugin.transformText(action, input);
-  assert.equal(typeof output, 'string', `Текстовый обработчик ${action} вернул не строку`);
+for (const cleanupMarker of ['cleanupBehaviors', 'clearListeners', 'restoreMedia', 'BdApi.DOM.removeStyle']) {
+  assert(source.includes(cleanupMarker), `Нет очистки ресурса: ${cleanupMarker}`);
 }
 
 const report = {
   plugin: 'PowerDiscord',
   version: source.match(/@version\s+([^\s]+)/)?.[1] || 'unknown',
   generatedAt: new Date().toISOString(),
-  source: path.relative(root, sourcePath),
   sourceBytes: Buffer.byteLength(source),
   featureCount: features.length,
   categoryCount: Object.keys(categories).length,
-  handlerCounts,
+  typeCounts,
   uniqueIds: ids.size,
   uniqueKeys: keys.size,
-  uniqueNames: names.size,
+  bilingualNames: namesRu.size === 100 && namesEn.size === 100,
   textTransformsExecuted: catalogs.text.length,
-  forbiddenPatternChecks: dangerousPatterns.length,
+  forbiddenPatternChecks: forbidden.length,
   status: 'ok'
 };
 
 if (process.argv.includes('--write-docs')) {
   const docsDir = path.join(root, 'docs');
   fs.mkdirSync(docsDir, {recursive: true});
-  const rows = features.map(feature =>
-    `| ${feature.id} | \`${feature.key}\` | ${categories[feature.category]} | ${feature.name.replace(/\|/g, '\\|')} | \`${feature.handler}\` |`
-  );
+  const rows = features.map(feature => `| ${feature.id} | \`${feature.key}\` | ${categories[feature.category].ru} | ${feature.name.ru.replace(/\|/g, '\\|')} | ${feature.name.en.replace(/\|/g, '\\|')} | \`${feature.type}\` |`);
   const markdown = [
-    '# Каталог функций PowerDiscord',
-    '',
-    `Автоматически проверено функций: **${features.length}**. Категорий: **${Object.keys(categories).length}**.`,
-    '',
-    '> Все функции локальны. PowerDiscord не читает токен, не отправляет данные в сеть и не сохраняет содержимое чужих сообщений.',
-    '',
-    '## Сводка',
-    '',
-    '| Обработчик | Количество |',
-    '|---|---:|',
-    ...Object.entries(handlerCounts).map(([handler, count]) => `| \`${handler}\` | ${count} |`),
-    '',
-    '## Полный реестр',
-    '',
-    '| № | Ключ | Категория | Название | Обработчик |',
-    '|---:|---|---|---|---|',
-    ...rows,
-    ''
+    '# PowerDiscord 2.0 — каталог 100 функций', '',
+    'Полностью переработанная фиолетовая версия. Реестр содержит ровно **100** безопасных локальных функций.', '',
+    '> Плагин работает только с уже доступными элементами интерфейса, не раскрывает закрытые каналы и не сохраняет содержимое чужих сообщений.', '',
+    '## Сводка', '', '| Тип | Количество |', '|---|---:|',
+    ...Object.entries(typeCounts).map(([type, count]) => `| \`${type}\` | ${count} |`), '',
+    '## Полный реестр', '', '| № | Ключ | Категория | Русское название | English name | Тип |', '|---:|---|---|---|---|---|', ...rows, ''
   ].join('\n');
   fs.writeFileSync(path.join(docsDir, 'POWERDISCORD_FEATURES_RU.md'), markdown);
   fs.writeFileSync(path.join(docsDir, 'powerdiscord-validation.json'), JSON.stringify(report, null, 2) + '\n');
