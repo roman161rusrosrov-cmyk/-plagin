@@ -20,7 +20,8 @@ const categories = Plugin.CATEGORY_LABELS;
 
 assert.equal(typeof Plugin, 'function', 'Экспорт должен быть классом');
 for (const method of ['start', 'stop', 'getSettingsPanel']) assert.equal(typeof Plugin.prototype[method], 'function', `Нет lifecycle-метода ${method}`);
-assert.equal(features.length, 100, 'В PowerDiscord v2 должно быть ровно 100 функций');
+assert.equal(features.length, 100, 'В PowerDiscord v3 должно быть ровно 100 функций');
+assert.match(source, /@version\s+3\.0\.0\b/, 'Ожидалась версия 3.0.0');
 
 const ids = new Set();
 const keys = new Set();
@@ -89,6 +90,18 @@ for (const cleanupMarker of ['cleanupBehaviors', 'clearListeners', 'restoreMedia
   assert(source.includes(cleanupMarker), `Нет очистки ресурса: ${cleanupMarker}`);
 }
 
+const responsiveSection = source.match(/startResponsiveEngine\(\)\s*\{([\s\S]*?)\n\s*handleHotkey\(/)?.[1] || '';
+const performanceChecks = {
+  incrementalObserver: source.includes('queueDomRoot(node)') && source.includes('pendingDomRoots'),
+  observerIgnoresCharacterData: !/observer\.observe\([^;]+characterData/s.test(source),
+  animationFrameBatching: source.includes('this.domFrame = requestAnimationFrame'),
+  responsiveWithoutGridRerender: Boolean(responsiveSection) && !responsiveSection.includes('refreshPanels'),
+  debouncedStorage: source.includes('saveState(immediate = false)') && source.includes('}, 220)'),
+  lazyFeatureCards: source.includes('features.slice(0, model.limit)') && source.includes('limit: Number(snapshot.limit) || 32'),
+  supportedResultModal: source.includes('BdApi.UI.alert(title, String(content))') && !source.includes('showConfirmationModal(title, pre')
+};
+for (const [name, passed] of Object.entries(performanceChecks)) assert(passed, `Не пройдена оптимизация: ${name}`);
+
 const report = {
   plugin: 'PowerDiscord',
   version: source.match(/@version\s+([^\s]+)/)?.[1] || 'unknown',
@@ -102,6 +115,7 @@ const report = {
   bilingualNames: namesRu.size === 100 && namesEn.size === 100,
   textTransformsExecuted: catalogs.text.length,
   forbiddenPatternChecks: forbidden.length,
+  performanceChecks,
   status: 'ok'
 };
 
@@ -110,8 +124,9 @@ if (process.argv.includes('--write-docs')) {
   fs.mkdirSync(docsDir, {recursive: true});
   const rows = features.map(feature => `| ${feature.id} | \`${feature.key}\` | ${categories[feature.category].ru} | ${feature.name.ru.replace(/\|/g, '\\|')} | ${feature.name.en.replace(/\|/g, '\\|')} | \`${feature.type}\` |`);
   const markdown = [
-    '# PowerDiscord 2.0 — каталог 100 функций', '',
-    'Полностью переработанная фиолетовая версия. Реестр содержит ровно **100** безопасных локальных функций.', '',
+    '# PowerDiscord 3.0 Performance Edition — каталог 100 функций', '',
+    'Оптимизированная фиолетовая версия. Реестр содержит ровно **100** безопасных локальных функций.', '',
+    'DOM-обновления пакетируются, меню рисует функции порциями, настройки сохраняются с debounce, а Responsive Engine не перестраивает список карточек.', '',
     '> Плагин работает только с уже доступными элементами интерфейса, не раскрывает закрытые каналы и не сохраняет содержимое чужих сообщений.', '',
     '## Сводка', '', '| Тип | Количество |', '|---|---:|',
     ...Object.entries(typeCounts).map(([type, count]) => `| \`${type}\` | ${count} |`), '',

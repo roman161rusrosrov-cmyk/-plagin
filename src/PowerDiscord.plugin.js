@@ -1,14 +1,14 @@
 /**
  * @name PowerDiscord
  * @author roman161rusrosrov-cmyk
- * @version 2.0.0
- * @description Фиолетовый русскоязычный набор из 100 безопасных локальных улучшений Discord.
+ * @version 3.0.0
+ * @description Производительный фиолетовый набор из 100 безопасных локальных улучшений Discord.
  */
 
 'use strict';
 
 const PLUGIN_NAME = 'PowerDiscord';
-const VERSION = '2.0.0';
+const VERSION = '3.0.0';
 const STYLE_ID = 'powerdiscord-v2-style';
 const STORAGE_KEY = 'state-v2';
 const ROOT_CLASS = 'pd2-running';
@@ -22,7 +22,10 @@ const UI_TEXT = Object.freeze({
     textLab: 'Текстовая лаборатория', localData: 'Локальные данные', notes: 'Заметки', bookmarks: 'Закладки',
     reset: 'Сбросить настройки', language: 'EN', safeTitle: 'Безопасный режим работы',
     safeBody: 'Плагин работает только с уже видимыми элементами. Он не раскрывает закрытые каналы, не хранит чужие сообщения и не обходит права Discord.',
-    empty: 'Ничего не найдено.', on: 'Вкл.', off: 'Выкл.', value: 'Значение'
+    empty: 'Ничего не найдено.', on: 'Вкл.', off: 'Выкл.', value: 'Значение', mode: 'Режим окна',
+    quickModes: 'Быстрые режимы', performance: '⚡ Лёгкий', comfort: '◆ Комфорт', privacyPreset: '◉ Приватность',
+    randomTheme: '🎲 Случайная тема', restoreHidden: 'Вернуть скрытые сообщения', loadMore: 'Показать ещё', custom: 'Свой',
+    viewBookmarks: 'Открыть закладки', viewNotes: 'Открыть заметки'
   }),
   en: Object.freeze({
     title: 'PowerDiscord', subtitle: '100 safe local features', search: 'Search features…',
@@ -32,7 +35,10 @@ const UI_TEXT = Object.freeze({
     textLab: 'Text laboratory', localData: 'Local data', notes: 'Notes', bookmarks: 'Bookmarks',
     reset: 'Reset settings', language: 'RU', safeTitle: 'Safe operating mode',
     safeBody: 'The plugin only works with elements already visible to you. It does not reveal hidden channels, retain other users’ messages, or bypass Discord permissions.',
-    empty: 'Nothing found.', on: 'On', off: 'Off', value: 'Value'
+    empty: 'Nothing found.', on: 'On', off: 'Off', value: 'Value', mode: 'Window mode',
+    quickModes: 'Quick modes', performance: '⚡ Lightweight', comfort: '◆ Comfort', privacyPreset: '◉ Privacy',
+    randomTheme: '🎲 Random theme', restoreHidden: 'Restore hidden messages', loadMore: 'Load more', custom: 'Custom',
+    viewBookmarks: 'View bookmarks', viewNotes: 'View notes'
   })
 });
 
@@ -338,7 +344,9 @@ html.pd2-window-private #app-mount [class*="guilds_"] [class*="icon_"] {filter: 
 .pd2-toolbar {display: grid; grid-template-columns: minmax(220px, 1fr) minmax(170px, auto) auto; gap: 10px; margin-bottom: 12px;}
 .pd2-input, .pd2-select {min-height: 40px; padding: 9px 11px; outline: none;}
 .pd2-input:focus, .pd2-textarea:focus, .pd2-select:focus {border-color: var(--pd2-accent); box-shadow: 0 0 0 3px rgb(168 85 247 / .13);}
-.pd2-stats {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 15px;}
+.pd2-quickbar {display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; padding: 10px; border: 1px solid rgb(168 85 247 / .16); border-radius: 14px; background: rgb(168 85 247 / .045);}
+.pd2-quickbar > span {margin-right: auto; color: var(--pd2-muted); font-weight: 700;}
+.pd2-stats {display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 15px;}
 .pd2-stat {padding: 11px 13px; border-radius: 13px; background: rgb(255 255 255 / .045); border: 1px solid rgb(255 255 255 / .07);}
 .pd2-stat strong {display: block; font-size: 19px; color: white;}
 .pd2-stat span {color: var(--pd2-muted); font-size: 12px;}
@@ -364,6 +372,7 @@ html.pd2-window-private #app-mount [class*="guilds_"] [class*="icon_"] {filter: 
 .pd2-range {width: 130px; accent-color: var(--pd2-accent);}
 .pd2-range-value {min-width: 46px; text-align: right; color: #d9b9ff; font-variant-numeric: tabular-nums;}
 .pd2-empty {grid-column: 1 / -1; padding: 34px; text-align: center; color: var(--pd2-muted);}
+.pd2-load-more {grid-column: 1 / -1; justify-self: center; min-width: 220px;}
 .pd2-code-copy {position: absolute; top: 6px; right: 6px; z-index: 2; border: 1px solid rgb(255 255 255 / .12); border-radius: 8px; padding: 5px 8px; color: white; background: rgb(74 29 112 / .9); cursor: pointer; font: 700 11px system-ui;}
 .pd2-composer-count {position: absolute; right: 12px; bottom: -19px; z-index: 2; color: var(--pd2-muted); font: 600 11px system-ui; pointer-events: none;}
 .pd2-code-host, .pd2-composer-host {position: relative !important;}
@@ -376,8 +385,12 @@ html[data-pd2-mode="vertical"] .pd2-grid, html[data-pd2-mode="vertical"] .pd2-la
   .pd2-header {padding: 13px; flex-wrap: wrap;}
   .pd2-content {padding: 12px;}
   .pd2-toolbar, .pd2-grid, .pd2-lab-grid {grid-template-columns: 1fr;}
+  .pd2-stats {grid-template-columns: repeat(2, minmax(0, 1fr));}
   .pd2-card {grid-template-columns: 32px minmax(0, 1fr);}
   .pd2-card-controls {grid-column: 1 / -1; justify-content: flex-end;}
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd2-panel *, .pd2-launcher {animation-duration: .001ms !important; transition-duration: .001ms !important;}
 }
 `;
 
@@ -388,11 +401,18 @@ class PowerDiscord {
     this.listeners = [];
     this.behaviorListeners = [];
     this.timers = new Set();
+    this.storageTimer = null;
+    this.stateDirty = false;
     this.models = new Set();
     this.overlay = null;
     this.launcher = null;
     this.observer = null;
     this.resizeObserver = null;
+    this.domFrame = null;
+    this.responsiveFrame = null;
+    this.pendingDomRoots = new Set();
+    this.responsiveMode = 'normal';
+    this.domBatchCount = 0;
     this.lastMessage = null;
     this.lastMedia = null;
     this.modifiedMedia = new Map();
@@ -403,7 +423,7 @@ class PowerDiscord {
   getName() { return PLUGIN_NAME; }
   getVersion() { return VERSION; }
   getAuthor() { return 'roman161rusrosrov-cmyk'; }
-  getDescription() { return 'Фиолетовый русскоязычный набор из 100 безопасных локальных улучшений Discord.'; }
+  getDescription() { return 'Производительный фиолетовый набор из 100 безопасных локальных улучшений Discord.'; }
 
   start() {
     if (this.running) return;
@@ -417,12 +437,13 @@ class PowerDiscord {
     this.listen(document, 'keydown', event => this.handleHotkey(event));
     this.applyVisualState();
     this.applyBehaviors();
-    this.toast('PowerDiscord 2.0 запущен: 100 функций.', 'success');
+    this.toast(`PowerDiscord ${VERSION} запущен: 100 функций.`, 'success');
   }
 
   stop() {
     if (!this.running) return;
     this.toast('PowerDiscord выключен.', 'info');
+    this.flushState();
     this.running = false;
     this.closeCenter();
     this.cleanupBehaviors();
@@ -462,6 +483,7 @@ class PowerDiscord {
       masterEnabled: true,
       locale: 'ru',
       theme: 'deep_violet',
+      preset: 'comfort',
       enabled,
       ranges,
       favorites: [],
@@ -483,6 +505,7 @@ class PowerDiscord {
     state.masterEnabled = typeof saved.masterEnabled === 'boolean' ? saved.masterEnabled : true;
     state.locale = saved.locale === 'en' ? 'en' : 'ru';
     state.theme = Object.hasOwn(THEME_MAP, saved.theme) ? saved.theme : defaults.theme;
+    state.preset = ['comfort', 'performance', 'privacy', 'custom'].includes(saved.preset) ? saved.preset : 'custom';
     if (saved.enabled && typeof saved.enabled === 'object') {
       for (const key of Object.keys(defaults.enabled)) if (typeof saved.enabled[key] === 'boolean') state.enabled[key] = saved.enabled[key];
     }
@@ -492,7 +515,7 @@ class PowerDiscord {
         if (Number.isFinite(value)) state.ranges[feature.key] = Math.min(feature.config.max, Math.max(feature.config.min, value));
       }
     }
-    state.favorites = Array.isArray(saved.favorites) ? saved.favorites.filter(key => FEATURE_MAP.has(key)).slice(0, 100) : [];
+    state.favorites = Array.isArray(saved.favorites) ? [...new Set(saved.favorites.filter(key => FEATURE_MAP.has(key)))].slice(0, 100) : [];
     state.bookmarks = Array.isArray(saved.bookmarks) ? saved.bookmarks.filter(item => item && typeof item === 'object').slice(0, 300).map(item => ({
       id: String(item.id || crypto.randomUUID()), messageId: String(item.messageId || ''), channelId: String(item.channelId || ''),
       guildId: String(item.guildId || ''), url: String(item.url || ''), createdAt: Number(item.createdAt) || Date.now()
@@ -503,8 +526,34 @@ class PowerDiscord {
     return state;
   }
 
-  saveState() {
-    try { BdApi.Data.save(PLUGIN_NAME, STORAGE_KEY, this.state); } catch (error) { this.recordError('saveState', error); }
+  saveState(immediate = false) {
+    if (!this.state) return;
+    this.stateDirty = true;
+    if (immediate) return this.flushState();
+    if (this.storageTimer !== null) {
+      this.clearTimer(this.storageTimer);
+      this.storageTimer = null;
+    }
+    this.storageTimer = this.setTimer(() => {
+      this.storageTimer = null;
+      this.persistState();
+    }, 220);
+  }
+
+  flushState() {
+    if (this.storageTimer !== null) {
+      this.clearTimer(this.storageTimer);
+      this.storageTimer = null;
+    }
+    this.persistState();
+  }
+
+  persistState() {
+    if (!this.stateDirty) return;
+    try {
+      BdApi.Data.save(PLUGIN_NAME, STORAGE_KEY, this.state);
+      this.stateDirty = false;
+    } catch (error) { this.recordError('saveState', error); }
   }
 
   t(key) { return UI_TEXT[this.state?.locale || 'ru'][key] || key; }
@@ -533,6 +582,12 @@ class PowerDiscord {
     const timer = setTimeout(() => { this.timers.delete(timer); callback(); }, delay);
     this.timers.add(timer);
     return timer;
+  }
+
+  clearTimer(timer) {
+    if (timer === null || timer === undefined) return;
+    clearTimeout(timer);
+    this.timers.delete(timer);
   }
 
   recordError(source, error) {
@@ -573,6 +628,8 @@ class PowerDiscord {
   setFeature(feature, value) {
     if (feature.type === 'toggle' || feature.type === 'behavior') {
       this.state.enabled[feature.key] = Boolean(value);
+      if (value && feature.key === 'comfortable_spacing') this.state.enabled.dense_spacing = false;
+      if (value && feature.key === 'dense_spacing') this.state.enabled.comfortable_spacing = false;
       if (feature.type === 'behavior') this.applyBehaviors();
       else this.applyVisualState();
     } else if (feature.type === 'range') {
@@ -583,8 +640,72 @@ class PowerDiscord {
       this.state.theme = feature.config.theme;
       this.applyVisualState();
     }
+    this.state.preset = 'custom';
     this.saveState();
     if (feature.type !== 'range') this.refreshPanels();
+  }
+
+  applyPreset(name) {
+    const defaults = this.defaultState();
+    if (name === 'comfort') {
+      this.state.enabled = {...defaults.enabled};
+      this.state.ranges = {...defaults.ranges};
+      this.state.theme = 'deep_violet';
+    } else if (name === 'performance') {
+      for (const key of Object.keys(this.state.enabled)) this.state.enabled[key] = false;
+      this.state.enabled.accent_selected_channel = true;
+      this.state.enabled.violet_code_blocks = true;
+      this.state.enabled.behavior_floating_launcher = true;
+      this.state.enabled.behavior_responsive_engine = true;
+      this.state.theme = 'black_violet';
+      this.state.ranges.message_gap = 1;
+      this.state.ranges.panel_opacity = 98;
+    } else if (name === 'privacy') {
+      this.state.enabled = {...defaults.enabled};
+      for (const key of ['privacy_avatars', 'privacy_usernames', 'privacy_server_icons', 'privacy_media', 'privacy_profile_banners']) this.state.enabled[key] = true;
+      this.state.enabled.behavior_privacy_on_blur = true;
+      this.state.theme = 'dark_orchid';
+    } else return;
+    this.state.masterEnabled = true;
+    this.state.preset = name;
+    this.applyVisualState();
+    this.applyBehaviors();
+    this.saveState(true);
+    this.rebuildPanels();
+    this.toast(this.state.locale === 'ru' ? 'Быстрый режим применён.' : 'Quick mode applied.', 'success');
+  }
+
+  randomTheme() {
+    const themes = Object.keys(THEME_MAP);
+    const current = Math.max(0, themes.indexOf(this.state.theme));
+    const offset = 1 + Math.floor(Math.random() * Math.max(1, themes.length - 1));
+    this.state.theme = themes[(current + offset) % themes.length];
+    this.state.preset = 'custom';
+    this.applyVisualState();
+    this.saveState();
+    this.refreshPanels();
+  }
+
+  restoreHiddenMessages() {
+    const hidden = [...document.querySelectorAll('.pd2-message-hidden')];
+    hidden.forEach(node => node.classList.remove('pd2-message-hidden'));
+    this.toast(`${this.state.locale === 'ru' ? 'Возвращено' : 'Restored'}: ${hidden.length}`, 'success');
+  }
+
+  showBookmarks() {
+    const content = this.state.bookmarks.map((item, index) => {
+      const date = new Date(item.createdAt).toLocaleString(this.state.locale === 'ru' ? 'ru-RU' : 'en-GB');
+      return `${index + 1}. ${date}\n${item.url || `Message ID: ${item.messageId}`}`;
+    }).join('\n\n');
+    this.showResult(this.t('bookmarks'), content || this.t('empty'));
+  }
+
+  showNotes() {
+    const content = this.state.notes.map((item, index) => {
+      const date = new Date(item.createdAt).toLocaleString(this.state.locale === 'ru' ? 'ru-RU' : 'en-GB');
+      return `${index + 1}. ${date} · Message ID: ${item.messageId || '—'}\n${item.text}`;
+    }).join('\n\n');
+    this.showResult(this.t('notes'), content || this.t('empty'));
   }
 
   applyBehaviors() {
@@ -602,6 +723,11 @@ class PowerDiscord {
     this.observer = null;
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+    if (this.domFrame !== null) cancelAnimationFrame(this.domFrame);
+    if (this.responsiveFrame !== null) cancelAnimationFrame(this.responsiveFrame);
+    this.domFrame = null;
+    this.responsiveFrame = null;
+    this.pendingDomRoots.clear();
     this.launcher?.remove();
     this.launcher = null;
     document.querySelectorAll('.pd2-code-copy, .pd2-composer-count').forEach(node => node.remove());
@@ -629,18 +755,50 @@ class PowerDiscord {
   }
 
   startDomEnhancements() {
-    const process = () => {
-      if (this.state.enabled.behavior_code_copy_buttons) this.addCodeCopyButtons();
-      if (this.state.enabled.behavior_composer_counter) this.updateComposerCounter();
-    };
-    this.observer = new MutationObserver(() => process());
-    this.observer.observe(document.body, {childList: true, subtree: true, characterData: true});
-    this.listenBehavior(document, 'input', () => this.updateComposerCounter(), true);
-    process();
+    this.observer = new MutationObserver(records => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node instanceof Element && node.dataset.pd2Owned !== 'true') this.queueDomRoot(node);
+        }
+      }
+    });
+    this.observer.observe(document.body, {childList: true, subtree: true});
+    if (this.state.enabled.behavior_composer_counter) {
+      this.listenBehavior(document, 'input', event => this.updateComposerCounter(event.target), true);
+    }
+    this.listenBehavior(document, 'visibilitychange', () => {
+      if (!document.hidden) this.queueDomRoot(document.body);
+    });
+    this.queueDomRoot(document.body);
   }
 
-  addCodeCopyButtons() {
-    for (const pre of document.querySelectorAll('[class*="message_"] pre')) {
+  queueDomRoot(root) {
+    if (!(root instanceof Element) || !this.running) return;
+    for (const pending of [...this.pendingDomRoots]) {
+      if (pending.contains?.(root)) return;
+      if (root.contains?.(pending)) this.pendingDomRoots.delete(pending);
+    }
+    this.pendingDomRoots.add(root);
+    if (document.hidden || this.domFrame !== null) return;
+    this.domFrame = requestAnimationFrame(() => {
+      this.domFrame = null;
+      const roots = [...this.pendingDomRoots];
+      this.pendingDomRoots.clear();
+      this.domBatchCount++;
+      for (const current of roots) {
+        if (this.state.enabled.behavior_code_copy_buttons) this.addCodeCopyButtons(current);
+        if (this.state.enabled.behavior_composer_counter && (current.matches?.('[class*="channelTextArea_"]') || current.querySelector?.('[class*="channelTextArea_"]'))) {
+          this.updateComposerCounter(current);
+        }
+      }
+    });
+  }
+
+  addCodeCopyButtons(root = document.body) {
+    const blocks = [];
+    if (root.matches?.('pre') && root.closest('[class*="message_"]')) blocks.push(root);
+    blocks.push(...(root.querySelectorAll?.('[class*="message_"] pre') || []));
+    for (const pre of blocks) {
       if (pre.querySelector(':scope > .pd2-code-copy')) continue;
       pre.classList.add('pd2-code-host');
       const button = makeElement('button', 'pd2-code-copy', this.state.locale === 'ru' ? 'Копировать' : 'Copy');
@@ -654,8 +812,10 @@ class PowerDiscord {
     }
   }
 
-  updateComposerCounter() {
-    const area = document.querySelector('[class*="channelTextArea_"]');
+  updateComposerCounter(source = null) {
+    const area = source instanceof Element
+      ? source.closest?.('[class*="channelTextArea_"]') || source.querySelector?.('[class*="channelTextArea_"]')
+      : document.querySelector('[class*="channelTextArea_"]');
     if (!area) return;
     const editor = area.querySelector('[contenteditable="true"], textarea');
     if (!editor) return;
@@ -673,12 +833,18 @@ class PowerDiscord {
 
   startResponsiveEngine() {
     const update = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const ratio = width / Math.max(1, height);
-      const mode = height > width * 1.08 ? 'vertical' : width < 940 ? 'compact' : ratio > 2.25 ? 'ultrawide' : width > 1700 ? 'large' : 'normal';
-      document.documentElement.dataset.pd2Mode = mode;
-      this.refreshPanels();
+      if (this.responsiveFrame !== null) return;
+      this.responsiveFrame = requestAnimationFrame(() => {
+        this.responsiveFrame = null;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const ratio = width / Math.max(1, height);
+        const mode = height > width * 1.08 ? 'vertical' : width < 940 ? 'compact' : ratio > 2.25 ? 'ultrawide' : width > 1700 ? 'large' : 'normal';
+        if (mode === this.responsiveMode && document.documentElement.dataset.pd2Mode === mode) return;
+        this.responsiveMode = mode;
+        document.documentElement.dataset.pd2Mode = mode;
+        this.updatePanelStats();
+      });
     };
     this.listenBehavior(window, 'resize', update, {passive: true});
     const app = document.getElementById('app-mount');
@@ -774,7 +940,7 @@ class PowerDiscord {
             if (!this.state.bookmarks.some(item => item.messageId === data.messageId)) {
               this.state.bookmarks.unshift({id: crypto.randomUUID(), messageId: data.messageId, channelId: data.channelId, guildId: data.guildId, url: data.url, createdAt: Date.now()});
               this.state.bookmarks = this.state.bookmarks.slice(0, 300);
-              this.saveState();
+              this.saveState(true);
             }
             this.toast(this.state.locale === 'ru' ? 'Позиция сообщения сохранена без его текста.' : 'Message location saved without its text.', 'success');
             return;
@@ -784,7 +950,7 @@ class PowerDiscord {
             if (note?.trim()) {
               this.state.notes.unshift({id: crypto.randomUUID(), messageId: data.messageId, text: note.trim().slice(0, 4000), createdAt: Date.now()});
               this.state.notes = this.state.notes.slice(0, 200);
-              this.saveState();
+              this.saveState(true);
               this.refreshPanels();
             }
             return;
@@ -812,8 +978,13 @@ class PowerDiscord {
           this.toast(`${this.state.locale === 'ru' ? 'Найдено' : 'Found'}: ${count}`, count ? 'success' : 'warning');
           break;
         }
-        case 'copy_current_channel_id': await this.copyText(location.pathname.match(/\/channels\/[^/]+\/([^/]+)/)?.[1] || ''); break;
-        case 'copy_current_guild_id': await this.copyText(location.pathname.match(/\/channels\/([^/]+)/)?.[1] || ''); break;
+        case 'copy_current_channel_id': await this.copyText(location.pathname.match(/\/channels\/[^/]+\/(\d+)/)?.[1] || ''); break;
+        case 'copy_current_guild_id': {
+          const guildId = location.pathname.match(/\/channels\/(\d+)/)?.[1] || '';
+          if (!guildId) throw new Error(this.state.locale === 'ru' ? 'Сейчас открыт личный чат, а не сервер.' : 'A direct message is open, not a server.');
+          await this.copyText(guildId);
+          break;
+        }
         case 'copy_media_url': {
           const media = this.requireMedia(); if (media) await this.copyText(media.currentSrc || media.src || ''); break;
         }
@@ -855,7 +1026,7 @@ class PowerDiscord {
     const url = URL.createObjectURL(blob);
     const anchor = makeElement('a');
     anchor.href = url;
-    anchor.download = 'powerdiscord-v2-backup.json';
+    anchor.download = 'powerdiscord-v3-backup.json';
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -877,7 +1048,7 @@ class PowerDiscord {
           this.state = normalized;
           this.applyVisualState();
           this.applyBehaviors();
-          this.saveState();
+          this.saveState(true);
           this.rebuildPanels();
         };
         if (BdApi.UI?.showConfirmationModal) {
@@ -892,22 +1063,26 @@ class PowerDiscord {
   }
 
   showDiagnostics() {
-    const active = FEATURE_REGISTRY.filter(feature => {
-      if (feature.type === 'theme') return feature.config.theme === this.state.theme;
-      if (feature.type === 'toggle' || feature.type === 'behavior') return this.state.enabled[feature.key];
-      return true;
-    }).length;
+    const active = this.activeFeatureCount();
+    const renderedCards = [...this.models].reduce((total, model) => total + model.root.querySelectorAll?.('.pd2-card').length, 0);
     const report = [
       `PowerDiscord ${VERSION}`,
       `Features: ${FEATURE_REGISTRY.length}`,
       `Active/available: ${active}`,
       `Theme: ${this.state.theme}`,
+      `Quick preset: ${this.state.preset}`,
       `Locale: ${this.state.locale}`,
       `Responsive: ${document.documentElement.dataset.pd2Mode || 'off'}`,
       `Bookmarks: ${this.state.bookmarks.length}`,
       `Notes: ${this.state.notes.length}`,
       `Listeners: ${this.listeners.length + this.behaviorListeners.length}`,
       `Observer: ${Boolean(this.observer)}`,
+      `DOM batches: ${this.domBatchCount}`,
+      `Pending DOM roots: ${this.pendingDomRoots.size}`,
+      `Rendered feature cards: ${renderedCards}`,
+      `Managed timers: ${this.timers.size}`,
+      `Pending storage write: ${this.storageTimer !== null}`,
+      `Dirty settings: ${this.stateDirty}`,
       `Runtime: ${Math.floor((Date.now() - this.startedAt) / 1000)}s`,
       `Errors: ${this.errors.length}`
     ].join('\n');
@@ -915,13 +1090,8 @@ class PowerDiscord {
   }
 
   showResult(title, content) {
-    if (BdApi.UI?.showConfirmationModal) {
-      const pre = makeElement('pre');
-      pre.style.whiteSpace = 'pre-wrap';
-      pre.style.maxHeight = '55vh';
-      pre.style.overflow = 'auto';
-      pre.textContent = String(content);
-      BdApi.UI.showConfirmationModal(title, pre, {confirmText: this.state.locale === 'ru' ? 'Готово' : 'Done', cancelText: null});
+    if (BdApi.UI?.alert) {
+      BdApi.UI.alert(title, String(content));
     } else window.alert(`${title}\n\n${content}`);
   }
 
@@ -938,14 +1108,21 @@ class PowerDiscord {
   closeCenter() {
     if (!this.overlay) return;
     const panel = this.overlay.querySelector('.pd2-panel');
-    for (const model of [...this.models]) if (model.root === panel) this.models.delete(model);
+    for (const model of [...this.models]) {
+      if (model.root !== panel) continue;
+      this.clearTimer(model.searchTimer);
+      this.models.delete(model);
+    }
     this.overlay.remove();
     this.overlay = null;
   }
 
-  buildPanel(modal) {
+  buildPanel(modal, snapshot = {}) {
     const root = makeElement('section', 'pd2-panel');
-    const model = {root, modal, search: null, category: null, favoritesOnly: false, grid: null, textInput: null, textOutput: null, stats: {}};
+    const model = {
+      root, modal, search: null, category: null, favoritesOnly: Boolean(snapshot.favoritesOnly), grid: null,
+      textInput: null, textOutput: null, stats: {}, limit: Number(snapshot.limit) || 32, searchTimer: null
+    };
     this.models.add(model);
 
     const header = makeElement('header', 'pd2-header');
@@ -958,6 +1135,7 @@ class PowerDiscord {
     master.dataset.active = String(this.state.masterEnabled);
     master.addEventListener('click', () => {
       this.state.masterEnabled = !this.state.masterEnabled;
+      this.state.preset = 'custom';
       this.applyVisualState();
       this.saveState();
       this.rebuildPanels();
@@ -981,11 +1159,33 @@ class PowerDiscord {
     safetyCopy.append(makeElement('strong', '', this.t('safeTitle')), makeElement('div', '', this.t('safeBody')));
     safety.appendChild(safetyCopy);
 
+    const quickbar = makeElement('div', 'pd2-quickbar');
+    quickbar.appendChild(makeElement('span', '', this.t('quickModes')));
+    for (const [preset, label] of [['performance', this.t('performance')], ['comfort', this.t('comfort')], ['privacy', this.t('privacyPreset')]]) {
+      const button = makeElement('button', 'pd2-button', label);
+      button.type = 'button';
+      button.dataset.active = String(this.state.preset === preset);
+      button.addEventListener('click', () => this.applyPreset(preset));
+      quickbar.appendChild(button);
+    }
+    const randomTheme = makeElement('button', 'pd2-button', this.t('randomTheme'));
+    randomTheme.type = 'button';
+    randomTheme.addEventListener('click', () => this.randomTheme());
+    quickbar.appendChild(randomTheme);
+
     const toolbar = makeElement('div', 'pd2-toolbar');
     const search = makeElement('input', 'pd2-input');
     search.type = 'search';
     search.placeholder = this.t('search');
-    search.addEventListener('input', () => this.renderFeatures(model));
+    search.value = String(snapshot.search || '');
+    search.addEventListener('input', () => {
+      this.clearTimer(model.searchTimer);
+      model.searchTimer = this.setTimer(() => {
+        model.searchTimer = null;
+        model.limit = 32;
+        this.renderFeatures(model);
+      }, 80);
+    });
     model.search = search;
     const category = makeElement('select', 'pd2-select');
     const all = makeElement('option', '', this.t('all'));
@@ -996,15 +1196,17 @@ class PowerDiscord {
       option.value = key;
       category.appendChild(option);
     }
-    category.addEventListener('change', () => this.renderFeatures(model));
+    category.value = String(snapshot.category || '');
+    category.addEventListener('change', () => { model.limit = 32; this.renderFeatures(model); });
     model.category = category;
     const favorites = makeElement('button', 'pd2-button', `★ ${this.t('favorites')}`);
     favorites.type = 'button';
-    favorites.addEventListener('click', () => { model.favoritesOnly = !model.favoritesOnly; favorites.dataset.active = String(model.favoritesOnly); this.renderFeatures(model); });
+    favorites.dataset.active = String(model.favoritesOnly);
+    favorites.addEventListener('click', () => { model.favoritesOnly = !model.favoritesOnly; model.limit = 32; favorites.dataset.active = String(model.favoritesOnly); this.renderFeatures(model); });
     toolbar.append(search, category, favorites);
 
     const stats = makeElement('div', 'pd2-stats');
-    for (const [key, label] of [['total', this.t('total')], ['active', this.t('active')], ['category', this.t('category')]]) {
+    for (const [key, label] of [['total', this.t('total')], ['active', this.t('active')], ['category', this.t('category')], ['mode', this.t('mode')]]) {
       const card = makeElement('div', 'pd2-stat');
       const value = makeElement('strong', '', '0');
       card.append(value, makeElement('span', '', label));
@@ -1017,9 +1219,11 @@ class PowerDiscord {
     const labGrid = makeElement('div', 'pd2-lab-grid');
     const input = makeElement('textarea', 'pd2-textarea');
     input.placeholder = this.t('input');
+    input.value = String(snapshot.textInput || '');
     const output = makeElement('textarea', 'pd2-textarea');
     output.placeholder = this.t('output');
     output.readOnly = true;
+    output.value = String(snapshot.textOutput || '');
     model.textInput = input;
     model.textOutput = output;
     labGrid.append(input, output);
@@ -1041,12 +1245,21 @@ class PowerDiscord {
     const reset = makeElement('button', 'pd2-button', this.t('reset'));
     reset.type = 'button';
     reset.addEventListener('click', () => this.confirmReset());
-    dataRow.appendChild(reset);
+    const restoreHidden = makeElement('button', 'pd2-button', this.t('restoreHidden'));
+    restoreHidden.type = 'button';
+    restoreHidden.addEventListener('click', () => this.restoreHiddenMessages());
+    const viewBookmarks = makeElement('button', 'pd2-button', this.t('viewBookmarks'));
+    viewBookmarks.type = 'button';
+    viewBookmarks.addEventListener('click', () => this.showBookmarks());
+    const viewNotes = makeElement('button', 'pd2-button', this.t('viewNotes'));
+    viewNotes.type = 'button';
+    viewNotes.addEventListener('click', () => this.showNotes());
+    dataRow.append(viewBookmarks, viewNotes, restoreHidden, reset);
     data.appendChild(dataRow);
 
     const grid = makeElement('div', 'pd2-grid');
     model.grid = grid;
-    content.append(safety, toolbar, stats, lab, data, grid);
+    content.append(safety, quickbar, toolbar, stats, lab, data, grid);
     root.append(header, content);
     this.renderFeatures(model);
     return root;
@@ -1062,16 +1275,40 @@ class PowerDiscord {
       return !query || haystack.includes(query);
     });
     model.grid.replaceChildren();
-    for (const feature of features) model.grid.appendChild(this.featureCard(feature, model));
+    for (const feature of features.slice(0, model.limit)) model.grid.appendChild(this.featureCard(feature, model));
     if (!features.length) model.grid.appendChild(makeElement('div', 'pd2-empty', this.t('empty')));
-    const active = FEATURE_REGISTRY.filter(feature => {
+    if (features.length > model.limit) {
+      const loadMore = makeElement('button', 'pd2-button pd2-load-more', `${this.t('loadMore')} (${features.length - model.limit})`);
+      loadMore.type = 'button';
+      loadMore.addEventListener('click', () => { model.limit += 32; this.renderFeatures(model); });
+      model.grid.appendChild(loadMore);
+    }
+    this.updatePanelStats(model);
+  }
+
+  activeFeatureCount() {
+    return FEATURE_REGISTRY.filter(feature => {
       if (feature.type === 'theme') return feature.config.theme === this.state.theme;
       if (feature.type === 'toggle' || feature.type === 'behavior') return this.state.enabled[feature.key];
       return true;
     }).length;
-    model.stats.total.textContent = String(FEATURE_REGISTRY.length);
-    model.stats.active.textContent = String(active);
-    model.stats.category.textContent = category ? this.categoryLabel(category) : this.t('all');
+  }
+
+  updatePanelStats(onlyModel = null) {
+    const models = onlyModel ? [onlyModel] : [...this.models];
+    const active = this.activeFeatureCount();
+    for (const model of models) {
+      if (!model.root.isConnected && !onlyModel) {
+        this.clearTimer(model.searchTimer);
+        this.models.delete(model);
+        continue;
+      }
+      const category = model.category?.value || '';
+      if (model.stats.total) model.stats.total.textContent = String(FEATURE_REGISTRY.length);
+      if (model.stats.active) model.stats.active.textContent = String(active);
+      if (model.stats.category) model.stats.category.textContent = category ? this.categoryLabel(category) : this.t('all');
+      if (model.stats.mode) model.stats.mode.textContent = document.documentElement.dataset.pd2Mode || this.responsiveMode || 'normal';
+    }
   }
 
   featureCard(feature, model) {
@@ -1134,15 +1371,20 @@ class PowerDiscord {
 
   refreshPanels() {
     for (const model of [...this.models]) {
-      if (!model.root.isConnected) { this.models.delete(model); continue; }
+      if (!model.root.isConnected) { this.clearTimer(model.searchTimer); this.models.delete(model); continue; }
       this.renderFeatures(model);
     }
   }
 
   rebuildPanels() {
     for (const model of [...this.models]) {
-      if (!model.root.isConnected) { this.models.delete(model); continue; }
-      const replacement = this.buildPanel(model.modal);
+      if (!model.root.isConnected) { this.clearTimer(model.searchTimer); this.models.delete(model); continue; }
+      const snapshot = {
+        search: model.search?.value || '', category: model.category?.value || '', favoritesOnly: model.favoritesOnly,
+        limit: model.limit, textInput: model.textInput?.value || '', textOutput: model.textOutput?.value || ''
+      };
+      this.clearTimer(model.searchTimer);
+      const replacement = this.buildPanel(model.modal, snapshot);
       model.root.replaceWith(replacement);
       this.models.delete(model);
     }
@@ -1151,7 +1393,7 @@ class PowerDiscord {
   confirmReset() {
     const apply = () => {
       this.state = this.defaultState();
-      this.saveState();
+      this.saveState(true);
       this.applyVisualState();
       this.applyBehaviors();
       this.rebuildPanels();

@@ -38,6 +38,9 @@ jobs:
       - name: Проверить 100 функций и безопасность
         run: node scripts/validate-powerdiscord.mjs
 
+      - name: Проверить lifecycle и оптимизации
+        run: node scripts/smoke-powerdiscord.mjs
+
       - name: Собрать устанавливаемый файл
         run: |
           mkdir -p dist
@@ -47,7 +50,7 @@ jobs:
       - name: Сохранить артефакт проверки
         uses: actions/upload-artifact@v4
         with:
-          name: PowerDiscord-2.0.0
+          name: PowerDiscord-3.0.0
           path: |
             dist/PowerDiscord.plugin.js
             dist/PowerDiscord.plugin.js.sha256
@@ -58,7 +61,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: powerdiscord-v2.0.0
+          TAG: powerdiscord-v3.0.0
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" \
@@ -69,6 +72,6 @@ jobs:
             gh release create "$TAG" \
               dist/PowerDiscord.plugin.js \
               dist/PowerDiscord.plugin.js.sha256 \
-              --title "PowerDiscord 2.0.0 — Purple Edition, 100 функций" \
-              --notes "Полностью переработанная фиолетовая версия: ровно 100 безопасных локальных функций, 10 тем, 15 текстовых инструментов, 20 действий с уже видимыми сообщениями, каналами и медиа, адаптивность и диагностика. Без токенов, телеметрии, сетевых запросов, журналирования сообщений и обхода прав Discord."
+              --title "PowerDiscord 3.0.0 — Performance Edition" \
+              --notes "Оптимизированная фиолетовая версия: ровно 100 безопасных функций, инкрементальный MutationObserver, пакетирование DOM-обновлений, ленивое меню, debounce сохранения, быстрые режимы Лёгкий/Комфорт/Приватность и расширенная диагностика. Без токенов, телеметрии, сетевых запросов, журналирования сообщений и обхода прав Discord."
           fi

@@ -1,8 +1,8 @@
 {
   "plugin": "PowerDiscord",
-  "version": "2.0.0",
-  "generatedAt": "2026-08-15T22:55:11.346Z",
-  "sourceBytes": 71048,
+  "version": "3.0.0",
+  "generatedAt": "2026-08-16T01:03:29.899Z",
+  "sourceBytes": 82470,
   "featureCount": 100,
   "categoryCount": 11,
   "typeCounts": {
@@ -18,5 +18,14 @@
   "bilingualNames": true,
   "textTransformsExecuted": 15,
   "forbiddenPatternChecks": 9,
+  "performanceChecks": {
+    "incrementalObserver": true,
+    "observerIgnoresCharacterData": true,
+    "animationFrameBatching": true,
+    "responsiveWithoutGridRerender": true,
+    "debouncedStorage": true,
+    "lazyFeatureCards": true,
+    "supportedResultModal": true
+  },
   "status": "ok"
 }

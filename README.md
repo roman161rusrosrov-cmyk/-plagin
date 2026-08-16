@@ -1,15 +1,15 @@
-# PowerDiscord 2.0 — Purple Edition
+# PowerDiscord 3.0 — Performance Edition
 
-Полностью переработанный русскоязычный all-in-one плагин для BetterDiscord. В версии 2.0 оставлены ровно **100 курируемых функций**, а весь Discord и центр управления оформлены в мягких фиолетовых тонах.
+Производительный русскоязычный all-in-one плагин для BetterDiscord. В версии 3.0 сохранены ровно **100 курируемых функций**, весь интерфейс оформлен в мягких фиолетовых тонах, а тяжёлые DOM-операции полностью переделаны.
 
 ## Скачать
 
-- [PowerDiscord.plugin.js — актуальный релиз 2.0.0](https://github.com/roman161rusrosrov-cmyk/-plagin/releases/download/powerdiscord-v2.0.0/PowerDiscord.plugin.js)
+- [PowerDiscord.plugin.js — актуальный релиз 3.0.0](https://github.com/roman161rusrosrov-cmyk/-plagin/releases/download/powerdiscord-v3.0.0/PowerDiscord.plugin.js)
 - [PowerDiscord.plugin.js — исходник из main](https://raw.githubusercontent.com/roman161rusrosrov-cmyk/-plagin/main/src/PowerDiscord.plugin.js)
 - [Полный каталог 100 функций](docs/POWERDISCORD_FEATURES_RU.md)
 - [Автоматический отчёт проверки](docs/powerdiscord-validation.json)
 
-## Состав версии 2.0
+## Состав версии 3.0
 
 | Раздел | Количество |
 |---|---:|
@@ -38,6 +38,20 @@
 - плавающая кнопка, приватность при сворачивании, кнопки копирования кода, счётчик символов и Responsive Engine;
 - полная очистка observer-ов, listeners, DOM-элементов, классов, медиа-стилей и CSS при выключении.
 
+## Что ускорено
+
+- MutationObserver обрабатывает только реально добавленные DOM-ветки и не следит за каждым изменённым символом;
+- несколько DOM-изменений объединяются в один кадр через `requestAnimationFrame`;
+- счётчик сообщения обновляется от события ввода, а не от полного пересканирования чата;
+- Responsive Engine меняет только режим окна и статистику, не перестраивая список функций;
+- меню сначала создаёт 32 карточки и подгружает остальные порциями;
+- поиск запускается после короткого debounce;
+- частые движения ползунков объединяются в одну запись настроек;
+- вкладка Discord в фоне не запускает DOM-обработку до возвращения пользователя;
+- режим `⚡ Лёгкий` отключает фильтры и observer-зависимые украшения одним нажатием.
+
+Дополнительные плюшки: быстрые профили `Лёгкий / Комфорт / Приватность`, случайная фиолетовая тема, просмотр локальных закладок и заметок, восстановление временно скрытых сообщений и расширенная диагностика нагрузки.
+
 ## Безопасность
 
 PowerDiscord не читает токены, cookies, пароли или session keys, не делает сетевые запросы, не пишет сообщения от имени пользователя и не обходит Nitro либо права Discord.
@@ -59,11 +73,13 @@ PowerDiscord не читает токены, cookies, пароли или sessio
 ```bash
 node --check src/PowerDiscord.plugin.js
 node scripts/validate-powerdiscord.mjs
+node scripts/smoke-powerdiscord.mjs
 ```
 
-Валидатор проверяет точное число функций, уникальность ID/ключей/названий, двуязычные подписи, диапазоны, темы, реализацию всех действий, исполнение 15 текстовых преобразований, очистку ресурсов и отсутствие опасных API.
+Валидатор проверяет точное число функций, уникальность ID/ключей/названий, двуязычные подписи, диапазоны, темы, реализацию всех действий, исполнение 15 текстовых преобразований, очистку ресурсов и отсутствие опасных API. Отдельный smoke-тест проверяет lifecycle, пакетирование DOM, debounce хранилища, ленивые карточки и быстрые режимы.
 
 ## Предыдущие версии
 
+- [PowerDiscord 2.0.0 — Purple Edition](https://github.com/roman161rusrosrov-cmyk/-plagin/releases/tag/powerdiscord-v2.0.0)
 - [PowerDiscord 1.0.0 — 530 функций](https://github.com/roman161rusrosrov-cmyk/-plagin/releases/tag/powerdiscord-v1.0.0)
 - [EmeraldCommandCenter 1001.0.0](https://github.com/roman161rusrosrov-cmyk/-plagin/releases/tag/v1001.0.0)
