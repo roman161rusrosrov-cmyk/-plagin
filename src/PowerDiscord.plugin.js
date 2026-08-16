@@ -1,14 +1,14 @@
 /**
  * @name PowerDiscord
  * @author roman161rusrosrov-cmyk
- * @version 3.0.0
- * @description Производительный фиолетовый набор из 100 безопасных локальных улучшений Discord.
+ * @version 3.1.0
+ * @description Фиолетовый набор из 100 безопасных локальных улучшений Discord с закреплёнными инструментами чата.
  */
 
 'use strict';
 
 const PLUGIN_NAME = 'PowerDiscord';
-const VERSION = '3.0.0';
+const VERSION = '3.1.0';
 const STYLE_ID = 'powerdiscord-v2-style';
 const STORAGE_KEY = 'state-v2';
 const ROOT_CLASS = 'pd2-running';
@@ -23,9 +23,10 @@ const UI_TEXT = Object.freeze({
     reset: 'Сбросить настройки', language: 'EN', safeTitle: 'Безопасный режим работы',
     safeBody: 'Плагин работает только с уже видимыми элементами. Он не раскрывает закрытые каналы, не хранит чужие сообщения и не обходит права Discord.',
     empty: 'Ничего не найдено.', on: 'Вкл.', off: 'Выкл.', value: 'Значение', mode: 'Режим окна',
-    quickModes: 'Быстрые режимы', performance: '⚡ Лёгкий', comfort: '◆ Комфорт', privacyPreset: '◉ Приватность',
+    quickModes: 'Быстрые режимы', pinnedTools: 'Закреплённые инструменты чата', performance: '⚡ Лёгкий', comfort: '◆ Комфорт', privacyPreset: '◉ Приватность',
     randomTheme: '🎲 Случайная тема', restoreHidden: 'Вернуть скрытые сообщения', loadMore: 'Показать ещё', custom: 'Свой',
-    viewBookmarks: 'Открыть закладки', viewNotes: 'Открыть заметки'
+    viewBookmarks: 'Открыть закладки', viewNotes: 'Открыть заметки', chatCheck: '🩺 Чек чата', saveMedia: '⬇ Медиа',
+    saveAvatar: '⬇ Аватар', voiceHotkeys: '⌨ Голосовые клавиши', pinnedHint: 'Только видимые данные · без журнала сообщений'
   }),
   en: Object.freeze({
     title: 'PowerDiscord', subtitle: '100 safe local features', search: 'Search features…',
@@ -36,9 +37,10 @@ const UI_TEXT = Object.freeze({
     reset: 'Reset settings', language: 'RU', safeTitle: 'Safe operating mode',
     safeBody: 'The plugin only works with elements already visible to you. It does not reveal hidden channels, retain other users’ messages, or bypass Discord permissions.',
     empty: 'Nothing found.', on: 'On', off: 'Off', value: 'Value', mode: 'Window mode',
-    quickModes: 'Quick modes', performance: '⚡ Lightweight', comfort: '◆ Comfort', privacyPreset: '◉ Privacy',
+    quickModes: 'Quick modes', pinnedTools: 'Pinned chat tools', performance: '⚡ Lightweight', comfort: '◆ Comfort', privacyPreset: '◉ Privacy',
     randomTheme: '🎲 Random theme', restoreHidden: 'Restore hidden messages', loadMore: 'Load more', custom: 'Custom',
-    viewBookmarks: 'View bookmarks', viewNotes: 'View notes'
+    viewBookmarks: 'View bookmarks', viewNotes: 'View notes', chatCheck: '🩺 Chat check', saveMedia: '⬇ Media',
+    saveAvatar: '⬇ Avatar', voiceHotkeys: '⌨ Voice hotkeys', pinnedHint: 'Visible data only · no message logging'
   })
 });
 
@@ -88,10 +90,10 @@ const VISUAL_FEATURES = [
   ['hide_gift_button', 'Скрывать кнопку подарка', 'Hide gift button', 'button[aria-label*="Подар" i], button[aria-label*="Gift" i]', 'display: none !important;', 'appearance'],
   ['hide_sticker_button', 'Скрывать кнопку стикеров', 'Hide sticker button', 'button[aria-label*="Стикер" i], button[aria-label*="Sticker" i]', 'display: none !important;', 'appearance'],
   ['hide_gif_button', 'Скрывать кнопку GIF', 'Hide GIF button', 'button[aria-label*="GIF" i]', 'display: none !important;', 'appearance'],
-  ['hide_help_button', 'Скрывать кнопку помощи', 'Hide help button', 'a[aria-label*="Помощь" i], a[aria-label*="Help" i]', 'display: none !important;', 'appearance'],
-  ['hide_inbox_button', 'Скрывать кнопку входящих', 'Hide inbox button', 'button[aria-label*="Входящие" i], button[aria-label*="Inbox" i]', 'display: none !important;', 'appearance'],
+  ['readable_font', 'Читаемый системный шрифт', 'Readable system font', '[class*="app_"], [class*="messageContent_"]', 'font-family: Inter, "Segoe UI", system-ui, sans-serif !important;', 'accessibility'],
+  ['hide_animated_media', 'Скрывать анимированные медиа', 'Hide animated media', '[class*="message_"] img[src*=".gif" i], [class*="message_"] img[src*="/gif" i], [class*="message_"] video[autoplay]', 'display: none !important;', 'media'],
   ['hide_search_bar', 'Скрывать строку поиска Discord', 'Hide Discord search bar', '[class*="toolbar_"] [class*="search_"]', 'display: none !important;', 'appearance'],
-  ['hide_activity_panel', 'Скрывать панель активностей', 'Hide activity panel', '[class*="nowPlayingColumn_"]', 'display: none !important;', 'layout'],
+  ['hide_inaccessible_channels', 'Скрывать недоступные каналы', 'Hide inaccessible channels', '[class*="sidebarList_"] [class*="modeLocked_"], [class*="sidebarList_"] [aria-disabled="true"]', 'display: none !important;', 'privacy'],
   ['reduce_animations', 'Уменьшать анимации', 'Reduce animations', '*', 'animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .08s !important;', 'accessibility'],
   ['high_contrast', 'Повышенный контраст текста', 'High text contrast', '[class*="messageContent_"], [class*="name_"]', 'color: var(--pd2-text) !important; text-shadow: 0 1px 1px rgb(0 0 0 / .45) !important;', 'accessibility'],
   ['comfortable_spacing', 'Комфортные интервалы', 'Comfortable spacing', '[class*="messageListItem_"]', 'margin-block: 5px !important;', 'layout'],
@@ -154,10 +156,10 @@ const ACTION_FEATURES = [
   ['note_for_message', 'Своя заметка к позиции сообщения', 'Personal note for message location', 'messages', 'message'],
   ['highlight_message', 'Подсветить сообщение локально', 'Highlight message locally', 'messages', 'message'],
   ['hide_message_local', 'Скрыть сообщение до перезапуска', 'Hide message until restart', 'messages', 'message'],
-  ['list_visible_channels', 'Список доступных каналов на экране', 'List visible channels', 'navigation', 'channel'],
+  ['chat_health_check', 'Чек текущего видимого чата', 'Check current visible chat', 'messages', 'chat'],
   ['search_visible_channels', 'Найти канал среди видимых', 'Search visible channels', 'navigation', 'channel'],
-  ['copy_current_channel_id', 'Копировать ID текущего канала', 'Copy current channel ID', 'navigation', 'channel'],
-  ['copy_current_guild_id', 'Копировать ID текущего сервера', 'Copy current server ID', 'navigation', 'channel'],
+  ['download_media', 'Сохранить видимое медиа', 'Save visible media', 'media', 'media'],
+  ['download_avatar', 'Сохранить видимый аватар', 'Save visible avatar', 'media', 'avatar'],
   ['copy_media_url', 'Копировать URL видимого медиа', 'Copy visible media URL', 'media', 'media'],
   ['zoom_media', 'Увеличить видимое медиа', 'Zoom visible media', 'media', 'media'],
   ['reset_media', 'Сбросить локальное медиа', 'Reset local media', 'media', 'media'],
@@ -169,7 +171,7 @@ const ACTION_FEATURES = [
 const BEHAVIOR_FEATURES = [
   ['floating_launcher', 'Плавающая кнопка центра', 'Floating control button', true],
   ['privacy_on_blur', 'Приватность при потере фокуса', 'Privacy when window loses focus', false],
-  ['code_copy_buttons', 'Кнопки копирования кода', 'Code copy buttons', true],
+  ['code_copy_buttons', 'Код: копирование и номера строк', 'Code copy and line numbers', true],
   ['composer_counter', 'Счётчик символов сообщения', 'Message character counter', true],
   ['responsive_engine', 'Автоадаптация под окно', 'Responsive window engine', true]
 ];
@@ -263,6 +265,53 @@ function transformText(action, input) {
   }
 }
 
+function fingerprintText(value) {
+  let hash = 2166136261;
+  for (const character of String(value)) {
+    hash ^= character.codePointAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function analyzeChatRows(rows) {
+  const stats = {
+    messages: 0, textMessages: 0, characters: 0, words: 0, links: 0, codeBlocks: 0,
+    images: 0, videos: 0, mentions: 0, attachments: 0, duplicates: 0, longMessages: 0,
+    cyrillicCharacters: 0, latinCharacters: 0
+  };
+  const fingerprints = new Set();
+  for (const row of new Set(Array.from(rows || []))) {
+    if (!row?.querySelector) continue;
+    stats.messages++;
+    const content = row.querySelector('[class*="messageContent_"], [id^="message-content-"]');
+    const text = String(content?.textContent || '').trim();
+    if (text) {
+      stats.textMessages++;
+      stats.characters += [...text].length;
+      stats.words += (text.match(/[\p{L}\p{N}]+/gu) || []).length;
+      stats.cyrillicCharacters += (text.match(/[а-яё]/giu) || []).length;
+      stats.latinCharacters += (text.match(/[a-z]/giu) || []).length;
+      if ([...text].length > 2000) stats.longMessages++;
+      const normalized = text.toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+      if (normalized.length >= 6) {
+        const fingerprint = fingerprintText(normalized);
+        if (fingerprints.has(fingerprint)) stats.duplicates++;
+        else fingerprints.add(fingerprint);
+      }
+    }
+    const links = Array.from(row.querySelectorAll?.('a[href]') || []);
+    stats.links += links.filter(link => /^https?:\/\//i.test(link.getAttribute?.('href') || link.href || '')).length;
+    stats.codeBlocks += (row.querySelectorAll?.('pre') || []).length;
+    stats.images += Array.from(row.querySelectorAll?.('img[src]') || [])
+      .filter(image => !image.closest?.('[class*="avatar_"], [class*="emoji"]')).length;
+    stats.videos += (row.querySelectorAll?.('video') || []).length;
+    stats.mentions += (row.querySelectorAll?.('[class*="mention_"]') || []).length;
+    stats.attachments += (row.querySelectorAll?.('[class*="attachment_"], [class*="embed_"]') || []).length;
+  }
+  return Object.freeze(stats);
+}
+
 const BASE_CSS = String.raw`
 :root {
   --pd2-bg: #0c0714;
@@ -346,6 +395,12 @@ html.pd2-window-private #app-mount [class*="guilds_"] [class*="icon_"] {filter: 
 .pd2-input:focus, .pd2-textarea:focus, .pd2-select:focus {border-color: var(--pd2-accent); box-shadow: 0 0 0 3px rgb(168 85 247 / .13);}
 .pd2-quickbar {display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; padding: 10px; border: 1px solid rgb(168 85 247 / .16); border-radius: 14px; background: rgb(168 85 247 / .045);}
 .pd2-quickbar > span {margin-right: auto; color: var(--pd2-muted); font-weight: 700;}
+.pd2-pinned {margin-bottom: 12px; padding: 12px; border: 1px solid rgb(196 125 255 / .24); border-radius: 15px; background: linear-gradient(135deg, rgb(124 58 237 / .10), rgb(193 92 255 / .035));}
+.pd2-pinned-head {display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 9px;}
+.pd2-pinned-head strong {color: #e6c9ff;}
+.pd2-pinned-head small {color: var(--pd2-muted);}
+.pd2-pinned-row {display: flex; flex-wrap: wrap; gap: 7px;}
+.pd2-pinned-row .pd2-button {padding: 7px 10px; font-size: 12px;}
 .pd2-stats {display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 15px;}
 .pd2-stat {padding: 11px 13px; border-radius: 13px; background: rgb(255 255 255 / .045); border: 1px solid rgb(255 255 255 / .07);}
 .pd2-stat strong {display: block; font-size: 19px; color: white;}
@@ -373,9 +428,11 @@ html.pd2-window-private #app-mount [class*="guilds_"] [class*="icon_"] {filter: 
 .pd2-range-value {min-width: 46px; text-align: right; color: #d9b9ff; font-variant-numeric: tabular-nums;}
 .pd2-empty {grid-column: 1 / -1; padding: 34px; text-align: center; color: var(--pd2-muted);}
 .pd2-load-more {grid-column: 1 / -1; justify-self: center; min-width: 220px;}
-.pd2-code-copy {position: absolute; top: 6px; right: 6px; z-index: 2; border: 1px solid rgb(255 255 255 / .12); border-radius: 8px; padding: 5px 8px; color: white; background: rgb(74 29 112 / .9); cursor: pointer; font: 700 11px system-ui;}
+.pd2-code-copy {position: absolute; top: 6px; right: 6px; z-index: 3; border: 1px solid rgb(255 255 255 / .12); border-radius: 8px; padding: 5px 8px; color: white; background: rgb(74 29 112 / .9); cursor: pointer; font: 700 11px system-ui;}
+.pd2-code-lines {position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; min-width: 38px; overflow: hidden; padding: 12px 8px 12px 4px; border-right: 1px solid rgb(196 125 255 / .16); color: rgb(214 183 240 / .62); background: rgb(28 16 45 / .58); text-align: right; white-space: pre; user-select: none; pointer-events: none; font: inherit; line-height: inherit;}
 .pd2-composer-count {position: absolute; right: 12px; bottom: -19px; z-index: 2; color: var(--pd2-muted); font: 600 11px system-ui; pointer-events: none;}
-.pd2-code-host, .pd2-composer-host {position: relative !important;}
+.pd2-code-host {position: relative !important; padding-left: 48px !important;}
+.pd2-composer-host {position: relative !important;}
 html[data-pd2-mode="compact"] .pd2-grid {grid-template-columns: 1fr;}
 html[data-pd2-mode="compact"] .pd2-toolbar, html[data-pd2-mode="vertical"] .pd2-toolbar {grid-template-columns: 1fr;}
 html[data-pd2-mode="vertical"] .pd2-grid, html[data-pd2-mode="vertical"] .pd2-lab-grid {grid-template-columns: 1fr;}
@@ -415,6 +472,7 @@ class PowerDiscord {
     this.domBatchCount = 0;
     this.lastMessage = null;
     this.lastMedia = null;
+    this.lastAvatar = null;
     this.modifiedMedia = new Map();
     this.startedAt = 0;
     this.errors = [];
@@ -423,7 +481,7 @@ class PowerDiscord {
   getName() { return PLUGIN_NAME; }
   getVersion() { return VERSION; }
   getAuthor() { return 'roman161rusrosrov-cmyk'; }
-  getDescription() { return 'Производительный фиолетовый набор из 100 безопасных локальных улучшений Discord.'; }
+  getDescription() { return 'Фиолетовый набор из 100 безопасных локальных улучшений Discord с закреплёнными инструментами чата.'; }
 
   start() {
     if (this.running) return;
@@ -730,7 +788,7 @@ class PowerDiscord {
     this.pendingDomRoots.clear();
     this.launcher?.remove();
     this.launcher = null;
-    document.querySelectorAll('.pd2-code-copy, .pd2-composer-count').forEach(node => node.remove());
+    document.querySelectorAll('.pd2-code-copy, .pd2-code-lines, .pd2-composer-count').forEach(node => node.remove());
     document.querySelectorAll('.pd2-code-host').forEach(node => node.classList.remove('pd2-code-host'));
     document.querySelectorAll('.pd2-composer-host').forEach(node => node.classList.remove('pd2-composer-host'));
     document.documentElement.classList.remove('pd2-window-private');
@@ -799,16 +857,27 @@ class PowerDiscord {
     if (root.matches?.('pre') && root.closest('[class*="message_"]')) blocks.push(root);
     blocks.push(...(root.querySelectorAll?.('[class*="message_"] pre') || []));
     for (const pre of blocks) {
-      if (pre.querySelector(':scope > .pd2-code-copy')) continue;
+      const code = pre.querySelector('code');
+      if (!code) continue;
       pre.classList.add('pd2-code-host');
-      const button = makeElement('button', 'pd2-code-copy', this.state.locale === 'ru' ? 'Копировать' : 'Copy');
-      button.type = 'button';
-      button.dataset.pd2Owned = 'true';
-      button.addEventListener('click', event => {
-        event.stopPropagation();
-        this.copyText(pre.querySelector('code')?.textContent || pre.textContent || '');
-      });
-      pre.appendChild(button);
+      if (!pre.querySelector(':scope > .pd2-code-lines')) {
+        const totalLines = Math.max(1, String(code.textContent || '').replace(/\n$/, '').split(/\r?\n/).length);
+        const shownLines = Math.min(totalLines, 1000);
+        const gutter = makeElement('span', 'pd2-code-lines', `${Array.from({length: shownLines}, (_, index) => index + 1).join('\n')}${totalLines > shownLines ? '\n…' : ''}`);
+        gutter.dataset.pd2Owned = 'true';
+        gutter.setAttribute('aria-hidden', 'true');
+        pre.appendChild(gutter);
+      }
+      if (!pre.querySelector(':scope > .pd2-code-copy')) {
+        const button = makeElement('button', 'pd2-code-copy', this.state.locale === 'ru' ? 'Копировать' : 'Copy');
+        button.type = 'button';
+        button.dataset.pd2Owned = 'true';
+        button.addEventListener('click', event => {
+          event.stopPropagation();
+          this.copyText(code.textContent || '');
+        });
+        pre.appendChild(button);
+      }
     }
   }
 
@@ -856,6 +925,7 @@ class PowerDiscord {
   }
 
   handleHotkey(event) {
+    if (event.repeat) return;
     if (event.ctrlKey && event.shiftKey && event.code === 'KeyP') {
       event.preventDefault();
       this.overlay ? this.closeCenter() : this.openCenter();
@@ -865,6 +935,43 @@ class PowerDiscord {
       document.documentElement.classList.toggle('pd2-window-private');
       this.toast(this.state.locale === 'ru' ? 'Паник-приватность переключена.' : 'Panic privacy toggled.', 'info');
     }
+    if (event.altKey && event.shiftKey && event.code === 'KeyM') {
+      event.preventDefault();
+      this.toggleVoiceControl('mute');
+    }
+    if (event.altKey && event.shiftKey && event.code === 'KeyD') {
+      event.preventDefault();
+      this.toggleVoiceControl('deafen');
+    }
+  }
+
+  toggleVoiceControl(kind) {
+    const needles = kind === 'mute'
+      ? ['mute', 'unmute', 'микрофон']
+      : ['deafen', 'undeafen', 'отключить звук', 'включить звук'];
+    const panel = document.querySelector('[class*="panels_"]');
+    const buttons = Array.from((panel || document).querySelectorAll('button[aria-label]'));
+    const button = buttons.find(candidate => {
+      const label = String(candidate.getAttribute('aria-label') || '').toLocaleLowerCase();
+      return needles.some(needle => label.includes(needle));
+    });
+    if (!button) {
+      this.toast(this.state.locale === 'ru' ? 'Голосовая кнопка сейчас не найдена.' : 'Voice control is not currently visible.', 'warning');
+      return false;
+    }
+    button.click();
+    this.toast(this.state.locale === 'ru' ? 'Голосовая кнопка переключена.' : 'Voice control toggled.', 'success');
+    return true;
+  }
+
+  showVoiceHotkeys() {
+    const ru = this.state.locale === 'ru';
+    this.showResult(
+      ru ? 'Голосовые горячие клавиши' : 'Voice hotkeys',
+      ru
+        ? 'Alt + Shift + M — микрофон\nAlt + Shift + D — приглушение звука\n\nКоманды нажимают уже видимые штатные кнопки Discord и не меняют аудиоустройства или внутреннее шумоподавление.'
+        : 'Alt + Shift + M — microphone\nAlt + Shift + D — deafen\n\nThe shortcuts click Discord’s visible native controls. They do not change audio devices or internal noise suppression.'
+    );
   }
 
   trackContext(event) {
@@ -873,7 +980,9 @@ class PowerDiscord {
     const message = target.closest('li[id^="chat-messages-"], [class*="messageListItem_"]');
     if (message) this.lastMessage = message;
     const media = target.closest('img[src], video[src]');
-    if (media) this.lastMedia = media;
+    const avatar = media?.tagName === 'IMG' && media.closest('[class*="avatar_"], [class*="avatarWrapper_"]');
+    if (avatar) this.lastAvatar = media;
+    else if (media) this.lastMedia = media;
   }
 
   messageData() {
@@ -899,6 +1008,84 @@ class PowerDiscord {
     const media = this.lastMedia?.isConnected ? this.lastMedia : null;
     if (!media) this.toast(this.state.locale === 'ru' ? 'Сначала наведите курсор на видимое изображение или видео.' : 'Hover a visible image or video first.', 'warning');
     return media;
+  }
+
+  requireAvatar() {
+    const avatar = this.lastAvatar?.isConnected ? this.lastAvatar : null;
+    if (!avatar) this.toast(this.state.locale === 'ru' ? 'Сначала наведите курсор на видимый аватар.' : 'Hover a visible avatar first.', 'warning');
+    return avatar;
+  }
+
+  visibleElementUrl(element) {
+    return String(element?.currentSrc || element?.src || element?.querySelector?.('source[src]')?.src || '').trim();
+  }
+
+  downloadVisibleElement(element, prefix) {
+    const source = this.visibleElementUrl(element);
+    if (!source) throw new Error(this.state.locale === 'ru' ? 'URL файла не найден.' : 'File URL was not found.');
+    const url = new URL(source, location.href);
+    if (!['https:', 'http:', 'blob:', 'data:'].includes(url.protocol)) throw new Error(this.state.locale === 'ru' ? 'Неподдерживаемый адрес файла.' : 'Unsupported file URL.');
+    const extension = url.pathname.match(/\.(png|jpe?g|webp|gif|avif|mp4|webm|mov)(?:$|\?)/i)?.[1]?.toLocaleLowerCase() || (prefix === 'avatar' ? 'png' : 'bin');
+    const anchor = makeElement('a');
+    anchor.href = url.href;
+    anchor.download = `powerdiscord-${prefix}-${Date.now()}.${extension}`;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.dataset.pd2Owned = 'true';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    this.toast(this.state.locale === 'ru' ? 'Сохранение запрошено. Если файл открылся — нажмите Ctrl+S.' : 'Save requested. If the file opened, press Ctrl+S.', 'success');
+  }
+
+  isRenderedMessage(row) {
+    if (!row?.isConnected || row.hidden || row.classList?.contains('pd2-message-hidden') || row.closest?.('[aria-hidden="true"]')) return false;
+    try {
+      const style = getComputedStyle(row);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    } catch {
+      return true;
+    }
+  }
+
+  chatHealthCheck() {
+    const canonicalRows = Array.from(document.querySelectorAll('li[id^="chat-messages-"]'));
+    const candidates = canonicalRows.length ? canonicalRows : Array.from(document.querySelectorAll('[class*="messageListItem_"]'));
+    const rows = Array.from(new Set(candidates)).filter(row => this.isRenderedMessage(row));
+    const stats = analyzeChatRows(rows);
+    const ru = this.state.locale === 'ru';
+    const dominant = stats.cyrillicCharacters > stats.latinCharacters * 1.2
+      ? (ru ? 'кириллица' : 'Cyrillic')
+      : stats.latinCharacters > stats.cyrillicCharacters * 1.2
+        ? (ru ? 'латиница' : 'Latin')
+        : (ru ? 'смешанный' : 'mixed');
+    const lines = ru ? [
+      `Сообщений в текущем DOM: ${stats.messages}`,
+      `С текстом: ${stats.textMessages}`,
+      `Символов / слов: ${stats.characters} / ${stats.words}`,
+      `Ссылок / блоков кода: ${stats.links} / ${stats.codeBlocks}`,
+      `Изображений / видео: ${stats.images} / ${stats.videos}`,
+      `Упоминаний / вложений: ${stats.mentions} / ${stats.attachments}`,
+      `Повторяющихся сообщений: ${stats.duplicates}`,
+      `Сообщений длиннее 2000 символов: ${stats.longMessages}`,
+      `Преобладающее письмо: ${dominant}`,
+      '',
+      'Проверка одноразовая: текст сообщений не сохраняется.'
+    ] : [
+      `Messages in the current DOM: ${stats.messages}`,
+      `With text: ${stats.textMessages}`,
+      `Characters / words: ${stats.characters} / ${stats.words}`,
+      `Links / code blocks: ${stats.links} / ${stats.codeBlocks}`,
+      `Images / videos: ${stats.images} / ${stats.videos}`,
+      `Mentions / attachments: ${stats.mentions} / ${stats.attachments}`,
+      `Duplicate messages: ${stats.duplicates}`,
+      `Messages over 2000 characters: ${stats.longMessages}`,
+      `Dominant script: ${dominant}`,
+      '',
+      'This is a one-time check; message text is not retained.'
+    ];
+    this.showResult(ru ? 'Чек видимого чата' : 'Visible chat check', lines.join('\n'));
+    return stats;
   }
 
   async copyText(value) {
@@ -961,12 +1148,7 @@ class PowerDiscord {
       }
 
       switch (action) {
-        case 'list_visible_channels': {
-          const sidebar = document.querySelector('[class*="sidebarList_"]');
-          const names = [...new Set([...(sidebar?.querySelectorAll('[class*="name_"]') || [])].map(node => node.textContent?.trim()).filter(Boolean))];
-          this.showResult(this.state.locale === 'ru' ? 'Доступные каналы на экране' : 'Visible accessible channels', names.join('\n') || this.t('empty'));
-          break;
-        }
+        case 'chat_health_check': this.chatHealthCheck(); break;
         case 'search_visible_channels': {
           const term = window.prompt(this.state.locale === 'ru' ? 'Название видимого канала:' : 'Visible channel name:', '')?.trim().toLocaleLowerCase();
           document.querySelectorAll('.pd2-channel-match').forEach(node => node.classList.remove('pd2-channel-match'));
@@ -978,15 +1160,14 @@ class PowerDiscord {
           this.toast(`${this.state.locale === 'ru' ? 'Найдено' : 'Found'}: ${count}`, count ? 'success' : 'warning');
           break;
         }
-        case 'copy_current_channel_id': await this.copyText(location.pathname.match(/\/channels\/[^/]+\/(\d+)/)?.[1] || ''); break;
-        case 'copy_current_guild_id': {
-          const guildId = location.pathname.match(/\/channels\/(\d+)/)?.[1] || '';
-          if (!guildId) throw new Error(this.state.locale === 'ru' ? 'Сейчас открыт личный чат, а не сервер.' : 'A direct message is open, not a server.');
-          await this.copyText(guildId);
-          break;
+        case 'download_media': {
+          const media = this.requireMedia(); if (media) this.downloadVisibleElement(media, 'media'); break;
+        }
+        case 'download_avatar': {
+          const avatar = this.requireAvatar(); if (avatar) this.downloadVisibleElement(avatar, 'avatar'); break;
         }
         case 'copy_media_url': {
-          const media = this.requireMedia(); if (media) await this.copyText(media.currentSrc || media.src || ''); break;
+          const media = this.requireMedia(); if (media) await this.copyText(this.visibleElementUrl(media)); break;
         }
         case 'zoom_media': {
           const media = this.requireMedia(); if (!media) return;
@@ -1117,6 +1298,45 @@ class PowerDiscord {
     this.overlay = null;
   }
 
+  buildPinnedTools() {
+    const pinned = makeElement('section', 'pd2-pinned');
+    const head = makeElement('div', 'pd2-pinned-head');
+    head.append(makeElement('strong', '', `📌 ${this.t('pinnedTools')}`), makeElement('small', '', this.t('pinnedHint')));
+    const row = makeElement('div', 'pd2-pinned-row');
+    const actions = [
+      ['chat_health_check', this.t('chatCheck')],
+      ['download_media', this.t('saveMedia')],
+      ['download_avatar', this.t('saveAvatar')]
+    ];
+    for (const [action, label] of actions) {
+      const button = makeElement('button', 'pd2-button', label);
+      button.type = 'button';
+      button.addEventListener('click', () => this.runAction(action));
+      row.appendChild(button);
+    }
+    const voice = makeElement('button', 'pd2-button', this.t('voiceHotkeys'));
+    voice.type = 'button';
+    voice.addEventListener('click', () => this.showVoiceHotkeys());
+    row.appendChild(voice);
+
+    for (const key of ['behavior_code_copy_buttons', 'compact_members', 'hide_inaccessible_channels', 'hide_animated_media', 'readable_font', 'hide_gift_button', 'hide_gif_button']) {
+      const feature = FEATURE_MAP.get(key);
+      if (!feature) continue;
+      const active = Boolean(this.state.enabled[key]);
+      const button = makeElement('button', 'pd2-button', `${active ? '✓' : '○'} ${feature.name[this.state.locale]}`);
+      button.type = 'button';
+      button.dataset.active = String(active);
+      button.title = feature.key;
+      button.addEventListener('click', () => {
+        this.setFeature(feature, !active);
+        this.rebuildPanels();
+      });
+      row.appendChild(button);
+    }
+    pinned.append(head, row);
+    return pinned;
+  }
+
   buildPanel(modal, snapshot = {}) {
     const root = makeElement('section', 'pd2-panel');
     const model = {
@@ -1158,6 +1378,7 @@ class PowerDiscord {
     const safetyCopy = makeElement('div');
     safetyCopy.append(makeElement('strong', '', this.t('safeTitle')), makeElement('div', '', this.t('safeBody')));
     safety.appendChild(safetyCopy);
+    const pinned = this.buildPinnedTools();
 
     const quickbar = makeElement('div', 'pd2-quickbar');
     quickbar.appendChild(makeElement('span', '', this.t('quickModes')));
@@ -1259,7 +1480,7 @@ class PowerDiscord {
 
     const grid = makeElement('div', 'pd2-grid');
     model.grid = grid;
-    content.append(safety, quickbar, toolbar, stats, lab, data, grid);
+    content.append(safety, pinned, quickbar, toolbar, stats, lab, data, grid);
     root.append(header, content);
     this.renderFeatures(model);
     return root;
@@ -1418,6 +1639,7 @@ PowerDiscord.CATALOGS = Object.freeze({
   behaviors: BEHAVIOR_FEATURES.map(item => item[0])
 });
 PowerDiscord.transformText = transformText;
+PowerDiscord.analyzeChatRows = analyzeChatRows;
 PowerDiscord.UI_TEXT = UI_TEXT;
 
 module.exports = PowerDiscord;

@@ -20,8 +20,9 @@ const categories = Plugin.CATEGORY_LABELS;
 
 assert.equal(typeof Plugin, 'function', 'Экспорт должен быть классом');
 for (const method of ['start', 'stop', 'getSettingsPanel']) assert.equal(typeof Plugin.prototype[method], 'function', `Нет lifecycle-метода ${method}`);
-assert.equal(features.length, 100, 'В PowerDiscord v3 должно быть ровно 100 функций');
-assert.match(source, /@version\s+3\.0\.0\b/, 'Ожидалась версия 3.0.0');
+assert.equal(typeof Plugin.analyzeChatRows, 'function', 'Нет безопасного анализатора видимого чата');
+assert.equal(features.length, 100, 'В PowerDiscord v3.1 должно быть ровно 100 функций');
+assert.match(source, /@version\s+3\.1\.0\b/, 'Ожидалась версия 3.1.0');
 
 const ids = new Set();
 const keys = new Set();
@@ -63,6 +64,13 @@ assert.equal(catalogs.text.length, 15);
 assert.equal(catalogs.actions.length, 20);
 assert.equal(catalogs.behaviors.length, 5);
 
+for (const key of ['readable_font', 'hide_animated_media', 'hide_inaccessible_channels', 'action_chat_health_check', 'action_download_media', 'action_download_avatar', 'behavior_code_copy_buttons']) {
+  assert(keys.has(key), `Нет новой функции ${key}`);
+}
+for (const removed of ['hide_activity_panel', 'copy_current_channel_id', 'copy_current_guild_id', 'list_visible_channels']) {
+  assert(!keys.has(removed) && !keys.has(`action_${removed}`), `Устаревшая функция осталась в реестре: ${removed}`);
+}
+
 const samples = {json_pretty: '{"фиолетовый":true}'};
 for (const action of catalogs.text) {
   const output = Plugin.transformText(action, samples[action] || '  Привет, Мир!  \nСтрока 2  ');
@@ -73,6 +81,25 @@ for (const action of catalogs.actions) {
   assert(new RegExp(`case\\s+['\"]${escaped}['\"]`).test(source), `Нет реализации action:${action}`);
 }
 
+const fakeRow = text => ({
+  querySelector: () => ({textContent: text}),
+  querySelectorAll: selector => {
+    if (selector === 'a[href]') return [{getAttribute: () => 'https://example.com'}];
+    if (selector === 'pre') return [{}];
+    if (selector === 'img[src]') return [{closest: () => null}];
+    if (selector === 'video') return [{}];
+    if (selector === '[class*="mention_"]') return [{}];
+    if (selector === '[class*="attachment_"], [class*="embed_"]') return [{}];
+    return [];
+  }
+});
+const chatSample = Plugin.analyzeChatRows([fakeRow('Привет мир'), fakeRow('Привет мир')]);
+assert.deepEqual(
+  {messages: chatSample.messages, duplicates: chatSample.duplicates, links: chatSample.links, codeBlocks: chatSample.codeBlocks},
+  {messages: 2, duplicates: 1, links: 2, codeBlocks: 2},
+  'Чек чата считает метрики неверно'
+);
+
 const forbidden = [
   [/\brequire\s*\(\s*['\"](?:child_process|net|tls|http|https)['\"]/, 'опасный Node-модуль'],
   [/\beval\s*\(/, 'eval'],
@@ -81,7 +108,7 @@ const forbidden = [
   [/\bdocument\.cookie\b/, 'cookies'],
   [/\bXMLHttpRequest\b/, 'XMLHttpRequest'],
   [/\bfetch\s*\(/, 'сетевой fetch'],
-  [/\bBdApi\.(?:Net|Webpack)\b/, 'закрытый BetterDiscord API'],
+  [/\bBdApi\.(?:Net|Webpack|Patcher)\b/, 'закрытый или патчинг-API BetterDiscord'],
   [/\bTODO\b|\bFIXME\b/, 'незавершённый участок']
 ];
 for (const [pattern, label] of forbidden) assert(!pattern.test(source), `Обнаружено запрещённое: ${label}`);
@@ -91,6 +118,7 @@ for (const cleanupMarker of ['cleanupBehaviors', 'clearListeners', 'restoreMedia
 }
 
 const responsiveSection = source.match(/startResponsiveEngine\(\)\s*\{([\s\S]*?)\n\s*handleHotkey\(/)?.[1] || '';
+const chatCheckSection = source.match(/chatHealthCheck\(\)\s*\{([\s\S]*?)\n\s*async copyText\(/)?.[1] || '';
 const performanceChecks = {
   incrementalObserver: source.includes('queueDomRoot(node)') && source.includes('pendingDomRoots'),
   observerIgnoresCharacterData: !/observer\.observe\([^;]+characterData/s.test(source),
@@ -98,7 +126,12 @@ const performanceChecks = {
   responsiveWithoutGridRerender: Boolean(responsiveSection) && !responsiveSection.includes('refreshPanels'),
   debouncedStorage: source.includes('saveState(immediate = false)') && source.includes('}, 220)'),
   lazyFeatureCards: source.includes('features.slice(0, model.limit)') && source.includes('limit: Number(snapshot.limit) || 32'),
-  supportedResultModal: source.includes('BdApi.UI.alert(title, String(content))') && !source.includes('showConfirmationModal(title, pre')
+  supportedResultModal: source.includes('BdApi.UI.alert(title, String(content))') && !source.includes('showConfirmationModal(title, pre'),
+  ephemeralChatCheck: Boolean(chatCheckSection) && !/saveState|Data\.(?:save|load)/.test(chatCheckSection),
+  pinnedChatTools: source.includes('buildPinnedTools()') && source.includes("['chat_health_check', this.t('chatCheck')]"),
+  codeLineGutter: source.includes("makeElement('span', 'pd2-code-lines'") && source.includes('.pd2-code-lines'),
+  visibleVoiceControlsOnly: source.includes("querySelectorAll('button[aria-label]')") && source.includes("button.click()"),
+  mediaSaveWithoutFetch: source.includes('downloadVisibleElement(element, prefix)') && source.includes("anchor.download = `powerdiscord-${prefix}-")
 };
 for (const [name, passed] of Object.entries(performanceChecks)) assert(passed, `Не пройдена оптимизация: ${name}`);
 
@@ -124,8 +157,9 @@ if (process.argv.includes('--write-docs')) {
   fs.mkdirSync(docsDir, {recursive: true});
   const rows = features.map(feature => `| ${feature.id} | \`${feature.key}\` | ${categories[feature.category].ru} | ${feature.name.ru.replace(/\|/g, '\\|')} | ${feature.name.en.replace(/\|/g, '\\|')} | \`${feature.type}\` |`);
   const markdown = [
-    '# PowerDiscord 3.0 Performance Edition — каталог 100 функций', '',
+    '# PowerDiscord 3.1 Chat Tools — каталог 100 функций', '',
     'Оптимизированная фиолетовая версия. Реестр содержит ровно **100** безопасных локальных функций.', '',
+    'Закреплены одноразовый чек видимого чата, сохранение выбранного медиа и аватара, инструменты кода с номерами строк, безопасные фильтры каналов/анимации и голосовые горячие клавиши.', '',
     'DOM-обновления пакетируются, меню рисует функции порциями, настройки сохраняются с debounce, а Responsive Engine не перестраивает список карточек.', '',
     '> Плагин работает только с уже доступными элементами интерфейса, не раскрывает закрытые каналы и не сохраняет содержимое чужих сообщений.', '',
     '## Сводка', '', '| Тип | Количество |', '|---|---:|',

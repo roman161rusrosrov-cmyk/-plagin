@@ -7,6 +7,7 @@ on:
     paths:
       - src/PowerDiscord.plugin.js
       - scripts/validate-powerdiscord.mjs
+      - scripts/smoke-powerdiscord.mjs
       - docs/POWERDISCORD_FEATURES_RU.md
       - docs/powerdiscord-validation.json
       - .github/workflows/powerdiscord-release.yml
@@ -50,7 +51,7 @@ jobs:
       - name: Сохранить артефакт проверки
         uses: actions/upload-artifact@v4
         with:
-          name: PowerDiscord-3.0.0
+          name: PowerDiscord-3.1.0
           path: |
             dist/PowerDiscord.plugin.js
             dist/PowerDiscord.plugin.js.sha256
@@ -61,7 +62,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: powerdiscord-v3.0.0
+          TAG: powerdiscord-v3.1.0
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" \
@@ -72,6 +73,6 @@ jobs:
             gh release create "$TAG" \
               dist/PowerDiscord.plugin.js \
               dist/PowerDiscord.plugin.js.sha256 \
-              --title "PowerDiscord 3.0.0 — Performance Edition" \
-              --notes "Оптимизированная фиолетовая версия: ровно 100 безопасных функций, инкрементальный MutationObserver, пакетирование DOM-обновлений, ленивое меню, debounce сохранения, быстрые режимы Лёгкий/Комфорт/Приватность и расширенная диагностика. Без токенов, телеметрии, сетевых запросов, журналирования сообщений и обхода прав Discord."
+              --title "PowerDiscord 3.1.0 — Chat Tools" \
+              --notes "Фиолетовая версия с ровно 100 безопасными функциями: закреплённый одноразовый чек видимого чата без сохранения текста, номера строк и копирование кода, сохранение выбранного медиа/аватара, фильтры недоступных каналов и анимированных медиа, читаемый шрифт и горячие клавиши штатных голосовых кнопок. Без токенов, телеметрии, сетевого перехвата, журналирования сообщений и обхода прав Discord."
           fi

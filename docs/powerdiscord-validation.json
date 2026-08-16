@@ -1,8 +1,8 @@
 {
   "plugin": "PowerDiscord",
-  "version": "3.0.0",
-  "generatedAt": "2026-08-16T01:03:29.899Z",
-  "sourceBytes": 82470,
+  "version": "3.1.0",
+  "generatedAt": "2026-08-16T01:31:47.655Z",
+  "sourceBytes": 94498,
   "featureCount": 100,
   "categoryCount": 11,
   "typeCounts": {
@@ -25,7 +25,12 @@
     "responsiveWithoutGridRerender": true,
     "debouncedStorage": true,
     "lazyFeatureCards": true,
-    "supportedResultModal": true
+    "supportedResultModal": true,
+    "ephemeralChatCheck": true,
+    "pinnedChatTools": true,
+    "codeLineGutter": true,
+    "visibleVoiceControlsOnly": true,
+    "mediaSaveWithoutFetch": true
   },
   "status": "ok"
 }

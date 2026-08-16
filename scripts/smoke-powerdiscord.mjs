@@ -48,6 +48,7 @@ class FakeElement {
   replaceChildren(...nodes) { this.children = [...nodes]; }
   replaceWith() { this.isConnected = false; }
   remove() { this.isConnected = false; }
+  click() { this.clickCount = (this.clickCount || 0) + 1; }
   addEventListener() {}
   removeEventListener() {}
   setAttribute(key, value) { this.attributes[key] = String(value); }
@@ -83,7 +84,7 @@ globalThis.document = {
   execCommand: () => true
 };
 globalThis.window = {innerWidth: 1280, innerHeight: 800, addEventListener() {}, removeEventListener() {}, confirm: () => true, prompt: () => '', alert() {}};
-globalThis.location = {pathname: '/channels/1/2'};
+globalThis.location = {pathname: '/channels/1/2', href: 'https://discord.com/channels/1/2'};
 globalThis.getComputedStyle = () => ({position: 'relative'});
 
 let nextFrame = 0;
@@ -116,6 +117,10 @@ const plugin = new Plugin();
 plugin.start();
 await wait(8);
 assert.equal(Plugin.FEATURE_REGISTRY.length, 100);
+assert.equal(plugin.getVersion(), '3.1.0');
+for (const key of ['action_chat_health_check', 'action_download_media', 'action_download_avatar', 'hide_inaccessible_channels', 'hide_animated_media', 'readable_font']) {
+  assert(Plugin.FEATURE_REGISTRY.some(feature => feature.key === key), `Нет ${key}`);
+}
 
 const previousBatches = plugin.domBatchCount;
 const branch = new FakeElement();
@@ -137,9 +142,64 @@ const panel = plugin.buildPanel(false);
 const panelModel = [...plugin.models].find(model => model.root === panel);
 assert(panelModel);
 assert.equal(panelModel.grid.children.length, 33, 'Ожидались 32 карточки и кнопка подгрузки');
+const walk = node => [node, ...(node?.children || []).flatMap(walk)];
+assert(walk(panel).some(node => node?.classList?.contains('pd2-pinned')), 'Нет закреплённой панели чата');
+
+const pre = new FakeElement('pre');
+const code = new FakeElement('code');
+code.textContent = 'первая\nвторая\nтретья';
+pre.matches = selector => selector === 'pre';
+pre.closest = () => new FakeElement('div');
+pre.querySelector = selector => {
+  if (selector === 'code') return code;
+  if (selector === ':scope > .pd2-code-lines') return pre.children.find(node => node.classList?.contains('pd2-code-lines')) || null;
+  if (selector === ':scope > .pd2-code-copy') return pre.children.find(node => node.classList?.contains('pd2-code-copy')) || null;
+  return null;
+};
+plugin.addCodeCopyButtons(pre);
+assert.equal(pre.children.find(node => node.classList.contains('pd2-code-lines'))?.textContent, '1\n2\n3', 'Нумерация кода неверна');
+assert(pre.children.some(node => node.classList.contains('pd2-code-copy')), 'Нет кнопки копирования кода');
 
 plugin.showResult('Тест', 'Строковый результат');
 assert.equal(typeof alerts[0]?.[1], 'string', 'BdApi.UI.alert получил неподдерживаемый тип контента');
+
+const originalDocumentQuery = document.querySelector;
+const originalDocumentQueryAll = document.querySelectorAll;
+let voiceClicks = 0;
+const voiceButton = new FakeElement('button');
+voiceButton.setAttribute('aria-label', 'Mute');
+voiceButton.click = () => { voiceClicks++; };
+document.querySelector = selector => selector === '[class*="panels_"]' ? {querySelectorAll: () => [voiceButton]} : null;
+let voicePrevented = false;
+plugin.handleHotkey({repeat: false, altKey: true, shiftKey: true, ctrlKey: false, code: 'KeyM', preventDefault: () => { voicePrevented = true; }});
+assert.equal(voiceClicks, 1, 'Голосовая горячая клавиша не нажала видимую кнопку');
+assert.equal(voicePrevented, true);
+
+const makeChatRow = text => ({
+  isConnected: true,
+  hidden: false,
+  classList: new FakeClassList(),
+  closest: () => null,
+  querySelector: () => ({textContent: text}),
+  querySelectorAll: selector => selector === 'a[href]' ? [{getAttribute: () => 'https://example.com'}] : []
+});
+document.querySelectorAll = selector => selector === 'li[id^="chat-messages-"]'
+  ? [makeChatRow('Тест чата'), makeChatRow('Тест чата')]
+  : [];
+const savesBeforeChatCheck = saveCount;
+const chatStats = plugin.chatHealthCheck();
+assert.equal(chatStats.messages, 2);
+assert.equal(chatStats.duplicates, 1);
+assert.match(alerts.at(-1)?.[1] || '', /не сохраняется/i);
+assert.equal(saveCount, savesBeforeChatCheck, 'Чек чата записал данные в хранилище');
+
+const avatar = new FakeElement('img');
+avatar.currentSrc = 'https://cdn.discordapp.com/avatars/example/avatar.png';
+plugin.lastAvatar = avatar;
+await plugin.runAction('download_avatar');
+assert.equal(document.body.children.at(-1)?.download?.endsWith('.png'), true, 'Аватар не подготовлен к сохранению');
+document.querySelector = originalDocumentQuery;
+document.querySelectorAll = originalDocumentQueryAll;
 
 plugin.applyPreset('performance');
 assert.equal(plugin.observer, null, 'Лёгкий режим не отключил observer-зависимые функции');
@@ -158,5 +218,10 @@ console.log(JSON.stringify({
   debouncedStorage: true,
   lazyCards: 32,
   presets: true,
+  chatCheck: true,
+  mediaSave: true,
+  codeLineNumbers: true,
+  pinnedTools: true,
+  voiceHotkeys: true,
   lifecycle: true
 }, null, 2));

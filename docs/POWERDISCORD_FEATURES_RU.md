@@ -1,6 +1,8 @@
-# PowerDiscord 3.0 Performance Edition — каталог 100 функций
+# PowerDiscord 3.1 Chat Tools — каталог 100 функций
 
 Оптимизированная фиолетовая версия. Реестр содержит ровно **100** безопасных локальных функций.
+
+Закреплены одноразовый чек видимого чата, сохранение выбранного медиа и аватара, инструменты кода с номерами строк, безопасные фильтры каналов/анимации и голосовые горячие клавиши.
 
 DOM-обновления пакетируются, меню рисует функции порциями, настройки сохраняются с debounce, а Responsive Engine не перестраивает список карточек.
 
@@ -52,10 +54,10 @@ DOM-обновления пакетируются, меню рисует фун�
 | 29 | `hide_gift_button` | Внешний вид | Скрывать кнопку подарка | Hide gift button | `toggle` |
 | 30 | `hide_sticker_button` | Внешний вид | Скрывать кнопку стикеров | Hide sticker button | `toggle` |
 | 31 | `hide_gif_button` | Внешний вид | Скрывать кнопку GIF | Hide GIF button | `toggle` |
-| 32 | `hide_help_button` | Внешний вид | Скрывать кнопку помощи | Hide help button | `toggle` |
-| 33 | `hide_inbox_button` | Внешний вид | Скрывать кнопку входящих | Hide inbox button | `toggle` |
+| 32 | `readable_font` | Доступность | Читаемый системный шрифт | Readable system font | `toggle` |
+| 33 | `hide_animated_media` | Медиа | Скрывать анимированные медиа | Hide animated media | `toggle` |
 | 34 | `hide_search_bar` | Внешний вид | Скрывать строку поиска Discord | Hide Discord search bar | `toggle` |
-| 35 | `hide_activity_panel` | Компоновка | Скрывать панель активностей | Hide activity panel | `toggle` |
+| 35 | `hide_inaccessible_channels` | Приватность | Скрывать недоступные каналы | Hide inaccessible channels | `toggle` |
 | 36 | `reduce_animations` | Доступность | Уменьшать анимации | Reduce animations | `toggle` |
 | 37 | `high_contrast` | Доступность | Повышенный контраст текста | High text contrast | `toggle` |
 | 38 | `comfortable_spacing` | Компоновка | Комфортные интервалы | Comfortable spacing | `toggle` |
@@ -106,10 +108,10 @@ DOM-обновления пакетируются, меню рисует фун�
 | 83 | `action_note_for_message` | Сообщения | Своя заметка к позиции сообщения | Personal note for message location | `action` |
 | 84 | `action_highlight_message` | Сообщения | Подсветить сообщение локально | Highlight message locally | `action` |
 | 85 | `action_hide_message_local` | Сообщения | Скрыть сообщение до перезапуска | Hide message until restart | `action` |
-| 86 | `action_list_visible_channels` | Навигация | Список доступных каналов на экране | List visible channels | `action` |
+| 86 | `action_chat_health_check` | Сообщения | Чек текущего видимого чата | Check current visible chat | `action` |
 | 87 | `action_search_visible_channels` | Навигация | Найти канал среди видимых | Search visible channels | `action` |
-| 88 | `action_copy_current_channel_id` | Навигация | Копировать ID текущего канала | Copy current channel ID | `action` |
-| 89 | `action_copy_current_guild_id` | Навигация | Копировать ID текущего сервера | Copy current server ID | `action` |
+| 88 | `action_download_media` | Медиа | Сохранить видимое медиа | Save visible media | `action` |
+| 89 | `action_download_avatar` | Медиа | Сохранить видимый аватар | Save visible avatar | `action` |
 | 90 | `action_copy_media_url` | Медиа | Копировать URL видимого медиа | Copy visible media URL | `action` |
 | 91 | `action_zoom_media` | Медиа | Увеличить видимое медиа | Zoom visible media | `action` |
 | 92 | `action_reset_media` | Медиа | Сбросить локальное медиа | Reset local media | `action` |
@@ -118,6 +120,6 @@ DOM-обновления пакетируются, меню рисует фун�
 | 95 | `action_show_diagnostics` | Система | Показать диагностику | Show diagnostics | `action` |
 | 96 | `behavior_floating_launcher` | Автоматизация | Плавающая кнопка центра | Floating control button | `behavior` |
 | 97 | `behavior_privacy_on_blur` | Автоматизация | Приватность при потере фокуса | Privacy when window loses focus | `behavior` |
-| 98 | `behavior_code_copy_buttons` | Автоматизация | Кнопки копирования кода | Code copy buttons | `behavior` |
+| 98 | `behavior_code_copy_buttons` | Автоматизация | Код: копирование и номера строк | Code copy and line numbers | `behavior` |
 | 99 | `behavior_composer_counter` | Автоматизация | Счётчик символов сообщения | Message character counter | `behavior` |
 | 100 | `behavior_responsive_engine` | Автоматизация | Автоадаптация под окно | Responsive window engine | `behavior` |
